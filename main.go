@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"ratatoskr/handler"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -23,7 +24,7 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 
-	handler := Handler{bot}
+	handler := handler.NewHandler(bot)
 
 	for update := range updates {
 		if update.Message != nil { // If we got a message
