@@ -3,6 +3,7 @@ package capabilities
 import (
 	clients "ratatoskr/clients"
 	layer "ratatoskr/layers"
+	"ratatoskr/types"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	openai "github.com/sashabaranov/go-openai"
@@ -25,7 +26,7 @@ func NewChatGPT(memoryLayer *layer.MemoryLayer) *ChatGPT {
 	}
 }
 
-func messageToChatCompletionMessage(message layer.Message) openai.ChatCompletionMessage {
+func messageToChatCompletionMessage(message types.StoredMessage) openai.ChatCompletionMessage {
 	if message.Role == "user" {
 		return openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleUser,
@@ -43,7 +44,7 @@ func (c ChatGPT) Check(update tgbotapi.Update) bool {
 	return true
 }
 
-func (c ChatGPT) Execute(update tgbotapi.Update) (res ResponseMessage, err error) {
+func (c ChatGPT) Execute(update tgbotapi.Update) (res types.ResponseMessage, err error) {
 
 	previousMessages := c.memoryLayer.GetMessages(update.Message.From.UserName)
 	history := make([]openai.ChatCompletionMessage, len(previousMessages))
@@ -57,7 +58,7 @@ func (c ChatGPT) Execute(update tgbotapi.Update) (res ResponseMessage, err error
 
 	message := cl.Complete(update.Message.Text)
 
-	rm := ResponseMessage{
+	rm := types.ResponseMessage{
 		ChatID:  update.Message.Chat.ID,
 		Message: message,
 	}
