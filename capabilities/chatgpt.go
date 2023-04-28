@@ -12,7 +12,7 @@ type ChatGPT struct {
 
 func NewChatGPT() *ChatGPT {
 	return &ChatGPT{
-		systemPrompt: `Hello, I'm a bot.You are Muninn, 
+		systemPrompt: `You are Ratatoskr, 
 		an EI (Extended Intelligence). 
 		An extended intelligence is a software system 
 		that utilises multiple Language Models, AI models, 
