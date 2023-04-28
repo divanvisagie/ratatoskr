@@ -7,7 +7,12 @@ type ResponseMessage struct {
 	Message string
 }
 
+type RequestMessage struct {
+	ChatID  int64
+	Message string
+}
+
 type Capability interface {
 	Check(update tgbotapi.Update) bool
-	Execute(update tgbotapi.Update) ResponseMessage
+	Execute(update tgbotapi.Update) (res ResponseMessage, err error)
 }

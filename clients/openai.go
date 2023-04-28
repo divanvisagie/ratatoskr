@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -14,6 +13,7 @@ type OpenAiClient struct {
 	systemPrompt string
 	client       *openai.Client
 	maxTokens    int
+	history      []openai.ChatCompletionMessage
 }
 
 func NewOpenAIClient(prompt string) *OpenAiClient {
@@ -23,11 +23,17 @@ func NewOpenAIClient(prompt string) *OpenAiClient {
 		client:       client,
 		maxTokens:    750,
 		systemPrompt: prompt,
+		history:      []openai.ChatCompletionMessage{},
 	}
 }
 
 func (c *OpenAiClient) SetMaxTokens(maxTokens int) *OpenAiClient {
 	c.maxTokens = maxTokens
+	return c
+}
+
+func (c *OpenAiClient) SetHistory(history []openai.ChatCompletionMessage) *OpenAiClient {
+	c.history = history
 	return c
 }
 
@@ -38,11 +44,15 @@ func (c *OpenAiClient) Complete(message string) string {
 			Role:    openai.ChatMessageRoleSystem,
 			Content: c.systemPrompt,
 		},
-		{
-			Role:    openai.ChatMessageRoleUser,
-			Content: message,
-		},
 	}
+
+	messages = append(messages, c.history...)
+
+	prmt := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: message,
+	}
+	messages = append(messages, prmt)
 
 	resp, err := c.client.CreateChatCompletion(
 		context.Background(),
@@ -54,9 +64,8 @@ func (c *OpenAiClient) Complete(message string) string {
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
-	fmt.Println(resp)
 	return resp.Choices[0].Message.Content
 }
