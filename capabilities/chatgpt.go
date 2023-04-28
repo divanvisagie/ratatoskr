@@ -26,7 +26,7 @@ func (c ChatGPT) Check(update tgbotapi.Update) bool {
 }
 
 func (c ChatGPT) Execute(update tgbotapi.Update) ResponseMessage {
-	cl := clients.NewClient(c.systemPrompt)
+	cl := clients.NewOpenAIClient(c.systemPrompt).SetMaxTokens(500)
 	res := cl.Complete(update.Message.Text)
 
 	return ResponseMessage{

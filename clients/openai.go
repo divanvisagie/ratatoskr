@@ -16,7 +16,7 @@ type OpenAiClient struct {
 	maxTokens    int
 }
 
-func NewClient(prompt string) *OpenAiClient {
+func NewOpenAIClient(prompt string) *OpenAiClient {
 	token := os.Getenv("OPENAI_API_KEY")
 	client := openai.NewClient(token)
 	return &OpenAiClient{
