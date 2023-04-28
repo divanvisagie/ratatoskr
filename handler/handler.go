@@ -13,7 +13,7 @@ type Handler struct {
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	capabilities := []capabilities.Capability{
-		capabilities.ChatGPT{},
+		capabilities.NewChatGPT(),
 	}
 	return &Handler{bot, capabilities}
 }
