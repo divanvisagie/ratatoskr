@@ -40,7 +40,7 @@ func (c ChatGPT) Check(req *types.RequestMessage) bool {
 	return true
 }
 
-func (c ChatGPT) Execute(req *types.RequestMessage) (res types.ResponseMessage, err error) {
+func (c ChatGPT) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {
 
 	previousMessages := req.Context
 	history := make([]openai.ChatCompletionMessage, len(previousMessages))
@@ -54,9 +54,9 @@ func (c ChatGPT) Execute(req *types.RequestMessage) (res types.ResponseMessage, 
 
 	message := client.Complete(req.Message)
 
-	rm := types.ResponseMessage{
+	res := types.ResponseMessage{
 		ChatID:  req.ChatID,
 		Message: message,
 	}
-	return rm, nil
+	return res, nil
 }

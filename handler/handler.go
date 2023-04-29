@@ -16,6 +16,7 @@ type Handler struct {
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	capabilities := []types.Capability{
+		capabilities.NewLinkProcessor(),
 		capabilities.NewChatGPT(),
 	}
 
