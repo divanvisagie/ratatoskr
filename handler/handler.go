@@ -11,25 +11,19 @@ import (
 
 type Handler struct {
 	bot          *tgbotapi.BotAPI
-	capabilities []capabilities.Capability
-	memoryLayer  *layers.MemoryLayer
+	gatewayLayer *layers.MemoryLayer
 }
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
-	memoryLayer := layers.NewMemoryLayer()
-	capabilities := []capabilities.Capability{
-		capabilities.NewChatGPT(memoryLayer),
+	capabilities := []types.Capability{
+		capabilities.NewChatGPT(),
 	}
-	return &Handler{bot, capabilities, memoryLayer}
-}
 
-func executeCorrectCapability(update tgbotapi.Update, capabilities []capabilities.Capability) (res types.ResponseMessage, err error) {
-	for _, capability := range capabilities {
-		if capability.Check(update) {
-			return capability.Execute(update)
-		}
-	}
-	return types.ResponseMessage{}, nil
+	//build up the layers
+	capabilityLayer := layers.NewCapabilitySelector(capabilities)
+	memoryLayer := layers.NewMemoryLayer(capabilityLayer)
+
+	return &Handler{bot: bot, gatewayLayer: memoryLayer}
 }
 
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
@@ -38,7 +32,14 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 		typingMsg := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		h.bot.Send(typingMsg)
 
-		res, err := executeCorrectCapability(update, h.capabilities)
+		//pass through the gateway layer
+		req := &types.RequestMessage{
+			ChatID:   update.Message.Chat.ID,
+			Message:  update.Message.Text,
+			UserName: update.Message.From.UserName,
+		}
+
+		res, err := h.gatewayLayer.PassThrough(req)
 		if err != nil {
 			log.Println(err)
 			msg := tgbotapi.NewMessage(res.ChatID, "Error while processing message")
@@ -46,15 +47,6 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 
 			h.bot.Send(msg)
 		}
-
-		h.memoryLayer.SaveRequestMessage(
-			update.Message.From.UserName,
-			update.Message.Text,
-		)
-		h.memoryLayer.SaveResponseMessage(
-			update.Message.From.UserName,
-			res.Message,
-		)
 
 		msg := tgbotapi.NewMessage(res.ChatID, res.Message)
 		msg.ReplyToMessageID = update.Message.MessageID

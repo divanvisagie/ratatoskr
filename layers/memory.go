@@ -8,15 +8,32 @@ import (
 type MemoryLayer struct {
 	// store messages by username and then by timestamp
 	store map[string]map[int64]types.StoredMessage
+	child Layer
 }
 
-func NewMemoryLayer() *MemoryLayer {
+func NewMemoryLayer(child Layer) *MemoryLayer {
 	return &MemoryLayer{
 		store: make(map[string]map[int64]types.StoredMessage),
+		child: child,
 	}
 }
 
-func (m *MemoryLayer) GetMessages(username string) []types.StoredMessage {
+func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMessage, error) {
+	history := m.getMessages(req.UserName)
+	req.Context = history
+
+	res, err := m.child.PassThrough(req)
+	if err != nil {
+		return types.ResponseMessage{}, err
+	}
+
+	m.saveRequestMessage(req.UserName, req.Message)
+	m.saveResponseMessage(req.UserName, res.Message)
+
+	return res, nil
+}
+
+func (m *MemoryLayer) getMessages(username string) []types.StoredMessage {
 	messages := make([]types.StoredMessage, 0)
 	for _, message := range m.store[username] {
 		messages = append(messages, message)
@@ -24,7 +41,7 @@ func (m *MemoryLayer) GetMessages(username string) []types.StoredMessage {
 	return messages
 }
 
-func (m *MemoryLayer) SaveRequestMessage(username string, message string) {
+func (m *MemoryLayer) saveRequestMessage(username string, message string) {
 	now := time.Now()
 	timestamp := now.Unix()
 	if m.store[username] == nil {
@@ -36,7 +53,7 @@ func (m *MemoryLayer) SaveRequestMessage(username string, message string) {
 	}
 }
 
-func (m *MemoryLayer) SaveResponseMessage(username string, message string) {
+func (m *MemoryLayer) saveResponseMessage(username string, message string) {
 	now := time.Now()
 	timestamp := now.Unix()
 	if m.store[username] == nil {

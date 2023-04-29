@@ -6,11 +6,18 @@ type ResponseMessage struct {
 }
 
 type RequestMessage struct {
-	ChatID  int64
-	Message string
+	UserName string
+	ChatID   int64
+	Message  string
+	Context  []StoredMessage
 }
 
 type StoredMessage struct {
 	Role    string
 	Message string
+}
+
+type Capability interface {
+	Check(req *RequestMessage) bool
+	Execute(req *RequestMessage) (res ResponseMessage, err error)
 }
