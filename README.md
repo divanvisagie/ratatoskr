@@ -4,6 +4,8 @@ Ratatoskr is a Telegram bot designed to help you deal with web links that you wo
 We don't have any mythological trees, but the idea is that when you paste a link here, Ratatoskr will take the appropriate action, for example for basic web pages it 
 will read and summarise the link as well as save it for later reading in a notion database. For Youtube links it will process the video audio using OpenAI whisper, return a summary of the video and save the video and the summary to a notion database. For links to PDFs it will save the PDF to a notion database. 
 
+![Ratatoskr logo](./docs/logo-256.png)
+
 ## Architecture
 The architecture is constructed by two main concepts, layers and capabilities. Layers are responsible for intercepting RequestMessages and processing them in some way. For example the MemoryLayer will store the messages that pass through it but also enrich RequestMessages with a context for the conversation history for that user.
 
