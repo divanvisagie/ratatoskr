@@ -8,13 +8,13 @@ import (
 
 type MemoryLayer struct {
 	// store messages by username and then by timestamp
-	store map[string]map[int64]types.StoredMessage
+	store map[string][]types.StoredMessage
 	child Layer
 }
 
 func NewMemoryLayer(child Layer) *MemoryLayer {
 	return &MemoryLayer{
-		store: make(map[string]map[int64]types.StoredMessage),
+		store: make(map[string][]types.StoredMessage),
 		child: child,
 	}
 }
@@ -35,15 +35,20 @@ func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMess
 }
 
 func (m *MemoryLayer) getMessages(username string) []types.StoredMessage {
-	messages := make([]types.StoredMessage, 0)
-	for _, message := range m.store[username] {
-		messages = append(messages, message)
-	}
+	// messages := make([]types.StoredMessage, 0)
+	messages := m.store[username]
 	sort.Slice(messages, func(i, j int) bool {
 		return messages[i].Timestamp < messages[j].Timestamp
 	})
 
-	return messages[len(messages)-20:] //only return the last 20 messages
+	// only return the last 20 messages
+	if len(messages) > 20 {
+		messages = messages[len(messages)-20:]
+		//some memory management
+		m.store[username] = messages[:]
+	}
+
+	return messages
 }
 
 func (m *MemoryLayer) saveRequestMessage(username string, message string) {
@@ -51,24 +56,25 @@ func (m *MemoryLayer) saveRequestMessage(username string, message string) {
 	now := time.Now()
 	timestamp := now.UnixMilli()
 	if m.store[username] == nil {
-		m.store[username] = make(map[int64]types.StoredMessage)
+		m.store[username] = make([]types.StoredMessage, 0)
 	}
-	m.store[username][timestamp] = types.StoredMessage{
+	m.store[username] = append(m.store[username], types.StoredMessage{
 		Role:      "user",
 		Message:   message,
 		Timestamp: timestamp,
-	}
+	})
 }
 
 func (m *MemoryLayer) saveResponseMessage(username string, message string) {
 	now := time.Now()
 	timestamp := now.Unix()
 	if m.store[username] == nil {
-		m.store[username] = make(map[int64]types.StoredMessage)
+		m.store[username] = make([]types.StoredMessage, 0)
 	}
-	m.store[username][timestamp] = types.StoredMessage{
+
+	m.store[username] = append(m.store[username], types.StoredMessage{
 		Role:      "assistant",
 		Message:   message,
 		Timestamp: timestamp,
-	}
+	})
 }
