@@ -3,14 +3,13 @@ module ratatoskr
 go 1.20
 
 require (
-	github.com/arjunmahishi/text-summary v0.0.0-20181215055741-559257dfa08b
+	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/gocolly/colly v1.2.0
 	github.com/sashabaranov/go-openai v1.9.0
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/antchfx/htmlquery v1.3.0 // indirect
 	github.com/antchfx/xmlquery v1.3.15 // indirect

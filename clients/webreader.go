@@ -9,11 +9,11 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func summarize(text string) string {
+func shorten(text string, limit int) string {
 
 	//limit text to 1000 characters
-	if len(text) > 1000 {
-		text = text[:1000]
+	if len(text) > limit {
+		text = text[:limit]
 	}
 	return text
 }
@@ -22,7 +22,7 @@ func trimText(text string) string {
 	// trimmed := strings.TrimSpace(text)
 	trimmed := strings.ReplaceAll(text, "\n", "")
 
-	trimmed = summarize(trimmed)
+	trimmed = shorten(trimmed, 1000)
 
 	return trimmed
 }
