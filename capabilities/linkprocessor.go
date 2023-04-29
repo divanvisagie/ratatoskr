@@ -1,6 +1,7 @@
 package capabilities
 
 import (
+	"fmt"
 	client "ratatoskr/clients"
 	"ratatoskr/types"
 	"regexp"
@@ -13,6 +14,26 @@ func containsLink(message string) bool {
 	//check if message contains a link
 	r := regexp.MustCompile(`(http|https)://`)
 	return r.MatchString(message)
+}
+
+func getSummaryFromChatGpt(link string, message string) string {
+	systemPrompt := fmt.Sprintf(`Ratatoskr, 
+		is an EI (Extended Intelligence). 
+		An extended intelligence is a software system 
+		that utilises multiple Language Models, AI models, 
+		NLP Functions and other capabilities to best serve 
+		the user.
+
+		You are part of the link processing module, whose job it is to take a link and return a summary of the content.
+		you will be provided the link and a summary message from the user as input. The summary is extracted directly
+		from the html body and may contain some junk data. Use the summary message and your existing knowledge of the 
+		site where possible to provide the best summary possible. Tell the user what the link is about and what can be learned from it.
+
+		link: %s
+	`, link)
+
+	summary := client.NewOpenAIClient(systemPrompt).Complete(message)
+	return summary
 }
 
 func NewLinkProcessor() *LinkProcessor {
@@ -33,10 +54,12 @@ func (c LinkProcessor) Execute(req *types.RequestMessage) (types.ResponseMessage
 		return types.ResponseMessage{}, err
 	}
 
+	summary := getSummaryFromChatGpt(link, body)
+
 	// Scrape website for main content
 	res := types.ResponseMessage{
 		ChatID:  req.ChatID,
-		Message: body,
+		Message: summary,
 	}
 	return res, nil
 }
