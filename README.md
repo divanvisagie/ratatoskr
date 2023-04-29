@@ -9,15 +9,24 @@ The architecture is constructed by two main concepts, layers and capabilities. L
 
 Capabilities are responsible for executing a specific task, they also contain a `Check` function that determines if the capability should be executed for a given RequestMessage. For example the LinkProcessorCapability will check if the RequestMessage contains a link and if so it will process it.
 
+    
+### User Flow
 ```mermaid
 sequenceDiagram
+
     actor U as user
     participant TB as Telegram Bot
+
     participant H as Handler
+    box Layers
     participant ML as Memory(Layer)
     participant CS as CapabilitySelector(Layer)
+    end
+
+    box Capabilities
     participant G as GPT(Capability)
     participant C as LinkProcessor(Capability)
+    end
 
     U->>TB: User sends message
     TB->>H: Handle message
