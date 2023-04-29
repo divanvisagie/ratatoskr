@@ -12,3 +12,22 @@ func TestShorten(t *testing.T) {
 		t.Errorf("Expected %s, got %s", expected, actual)
 	}
 }
+
+func TestExtractBodyFromWebsite(t *testing.T) {
+	urls := []string{
+		"https://chat.openai.com/",
+		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+		"https://github.com/dstotijn/go-notion",
+	}
+
+	for _, url := range urls {
+		bodyText, err := ExtractBodyFromWebsite(url)
+		if err != nil {
+			t.Errorf("Error while extracting body from website: %s", err)
+		}
+
+		if len(bodyText) == 0 {
+			t.Errorf("Expected body text to be longer than 0 characters")
+		}
+	}
+}
