@@ -76,6 +76,8 @@ Ratatoskr runs as a simple go program and currently has no database, all storage
 | TELEGRAM_ADMIN | Your telegram username |
 | TELEGRAM_USERS | A comma separated list of all the users you want to allow to use this bot |
 | OPENAI_API_KEY | [API token](https://platform.openai.com/account/api-keys) for access to GPT 3.5 Turbo |
+| NOTION_TOKEN | [Notion API token](https://www.notion.so/my-integrations) for access to your notion database |
+| NOTION_JOURNAL_DB | The ID of the notion database you want to save links to |
 
 
 
