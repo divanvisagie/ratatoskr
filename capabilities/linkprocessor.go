@@ -1,6 +1,7 @@
 package capabilities
 
 import (
+	client "ratatoskr/clients"
 	"ratatoskr/types"
 	"regexp"
 )
@@ -27,10 +28,15 @@ func (c LinkProcessor) Execute(req *types.RequestMessage) (types.ResponseMessage
 	r := regexp.MustCompile(`(http|https)://[^\s]+`)
 	link := r.FindString(req.Message)
 
+	body, err := client.ExtractBodyFromWebsite(link)
+	if err != nil {
+		return types.ResponseMessage{}, err
+	}
+
 	// Scrape website for main content
 	res := types.ResponseMessage{
 		ChatID:  req.ChatID,
-		Message: link,
+		Message: body,
 	}
 	return res, nil
 }
