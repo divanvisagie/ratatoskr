@@ -28,6 +28,7 @@ func getSummaryFromChatGpt(link string, message string) string {
 		you will be provided the link and a summary message from the user as input. The summary is extracted directly
 		from the html body and may contain some junk data. Use the summary message and your existing knowledge of the 
 		site where possible to provide the best summary possible. Tell the user what the link is about and what can be learned from it.
+		Remember to highlight any stand out points that may contain unexpected conclusions or information.
 
 		link: %s
 	`, link)
