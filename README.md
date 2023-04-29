@@ -34,12 +34,24 @@ sequenceDiagram
     H->>ML: Forward RequestMessage
     ML->>CS: Forward RequestMessage
 
-    alt Is a question
-    CS->>G: Forward RequestMessage
-    else Is a link
-    CS->>C: Forward RequestMessage
+    loop Every Capability
+    CS->>G: Run Check RequestMessage
+    G-->>CS: Returns Response
     end
+
+    alt Is a question
+    CS->>G: Execute RequestMessage
+    else Is a link
+    CS->>C: Execute RequestMessage
+    end
+
+    CS-->>ML: Returns Response
+    ML-->>H: Returns Response
+    H-->>TB: Returns Response
+    TB->>U: Returns Response
 ```
+
+
 ## Setup
 ```sh
 go install github.com/cosmtrek/air@latest
