@@ -51,7 +51,6 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 		}
 
 		msg := tgbotapi.NewMessage(res.ChatID, res.Message)
-		msg.ReplyToMessageID = update.Message.MessageID
 		msg.ParseMode = "markdown"
 
 		h.bot.Send(msg)
