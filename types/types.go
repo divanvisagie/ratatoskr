@@ -13,8 +13,9 @@ type RequestMessage struct {
 }
 
 type StoredMessage struct {
-	Role    string
-	Message string
+	Role      string
+	Message   string
+	Timestamp int64
 }
 
 type Capability interface {

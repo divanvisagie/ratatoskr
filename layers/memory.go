@@ -2,12 +2,11 @@ package layers
 
 import (
 	"ratatoskr/types"
-	"sync"
+	"sort"
 	"time"
 )
 
 type MemoryLayer struct {
-	mu sync.Mutex
 	// store messages by username and then by timestamp
 	store map[string]map[int64]types.StoredMessage
 	child Layer
@@ -40,13 +39,14 @@ func (m *MemoryLayer) getMessages(username string) []types.StoredMessage {
 	for _, message := range m.store[username] {
 		messages = append(messages, message)
 	}
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Timestamp < messages[j].Timestamp
+	})
+
 	return messages[len(messages)-20:] //only return the last 20 messages
 }
 
 func (m *MemoryLayer) saveRequestMessage(username string, message string) {
-	// limit mutations to one at a time
-	// m.mu.Lock()
-	// defer m.mu.Unlock()
 
 	now := time.Now()
 	timestamp := now.UnixMilli()
@@ -54,8 +54,9 @@ func (m *MemoryLayer) saveRequestMessage(username string, message string) {
 		m.store[username] = make(map[int64]types.StoredMessage)
 	}
 	m.store[username][timestamp] = types.StoredMessage{
-		Role:    "user",
-		Message: message,
+		Role:      "user",
+		Message:   message,
+		Timestamp: timestamp,
 	}
 }
 
@@ -66,7 +67,8 @@ func (m *MemoryLayer) saveResponseMessage(username string, message string) {
 		m.store[username] = make(map[int64]types.StoredMessage)
 	}
 	m.store[username][timestamp] = types.StoredMessage{
-		Role:    "assistant",
-		Message: message,
+		Role:      "assistant",
+		Message:   message,
+		Timestamp: timestamp,
 	}
 }
