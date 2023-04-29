@@ -21,6 +21,7 @@ sequenceDiagram
 
     participant H as Handler
     box Layers
+    participant SL as Security(Layer)
     participant ML as Memory(Layer)
     participant CS as CapabilitySelector(Layer)
     end
@@ -33,7 +34,15 @@ sequenceDiagram
     U->>TB: User sends message
     TB->>H: Handle message
     H->>H: Convert to RequestMessage
-    H->>ML: Forward RequestMessage
+
+    H->>SL: Forward RequestMessage
+    alt is allowed
+    SL->>ML: Forward RequestMessage
+    else is not allowed
+    SL-->>H: Returns Rejection message
+    end
+    H-->>TB: Returns Rejection message
+    TB-->>U: Returns Rejection message
     ML->>CS: Forward RequestMessage
 
     loop Every Capability
@@ -53,13 +62,38 @@ sequenceDiagram
     TB->>U: Returns Response
 ```
 
+## Running Ratatoskr
+Ratatoskr runs as a simple go program and currently has no database, all storage is in memory. Therefore you only need to set up a few environment variables and you are good to go. You can easily deploy it in something like [Railway](https://railway.app?referralCode=JU48xV).
 
-## Setup
+### Environment Variables
+| Name | Description |
+| --- | --- | 
+| TELEGRAM_BOT_TOKEN | The token for the telegram bot which you set up with [BotFather](https://t.me/BotFather) |
+| TELEGRAM_ADMIN | Your telegram username |
+| TELEGRAM_USERS | A comma separated list of all the users you want to allow to use this bot |
+| OPENAI_API_KEY | [API token](https://platform.openai.com/account/api-keys) for access to GPT 3.5 Turbo |
+
+
+
+## Development Setup
+Regular go programming environment, no funny business.
+
+Install modules
+```sh
+go mod download
+```
+
+Run the program 
+```sh
+go run main.go
+```
+
+
+**For developing with hot reload Run**
 ```sh
 go install github.com/cosmtrek/air@latest
 ```
 
-**Run**
-```
+```sh
 air
 ```
