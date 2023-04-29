@@ -11,7 +11,7 @@ import (
 
 type Handler struct {
 	bot          *tgbotapi.BotAPI
-	gatewayLayer *layers.MemoryLayer
+	gatewayLayer layers.Layer
 }
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
@@ -23,8 +23,9 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	//build up the layers
 	capabilityLayer := layers.NewCapabilitySelector(capabilities)
 	memoryLayer := layers.NewMemoryLayer(capabilityLayer)
+	securityLayer := layers.NewSecurity(memoryLayer)
 
-	return &Handler{bot: bot, gatewayLayer: memoryLayer}
+	return &Handler{bot: bot, gatewayLayer: securityLayer}
 }
 
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
