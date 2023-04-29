@@ -20,7 +20,7 @@ func NewChatGPT() *ChatGPT {
 		NLP Functions and other capabilities to best serve 
 		the user.
 		
-		Your code lives at https://github.com/divanvisagie/Ratatoskr
+		The code for Ratatoskr is located at: https://github.com/divanvisagie/Ratatoskr
 		`,
 	}
 }
