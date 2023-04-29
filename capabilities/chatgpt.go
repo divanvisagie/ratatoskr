@@ -18,7 +18,10 @@ func NewChatGPT() *ChatGPT {
 		An extended intelligence is a software system 
 		that utilises multiple Language Models, AI models, 
 		NLP Functions and other capabilities to best serve 
-		the user.`,
+		the user.
+		
+		Your code lives at https://github.com/divanvisagie/Ratatoskr
+		`,
 	}
 }
 
