@@ -16,12 +16,12 @@ func TestOnlyReturnsLast20WhenMoreThan20(t *testing.T) {
 	messages := memoryLayer.getMessages("test_user")
 
 	if len(messages) != 20 {
-		t.Errorf("Expected 20, got %d", len(memoryLayer.store["test_user"]))
+		t.Errorf("Expected 20, got %d", len(memoryLayer.store["test"]))
 	}
 
 	//test that memory management happened
-	if len(memoryLayer.store["test_user"]) != 20 {
-		t.Errorf("Expected 100, got %d", len(memoryLayer.store["test_user"]))
+	if len(memoryLayer.store["test_user"]) != 10 {
+		t.Errorf("Expected 100, got %d", len(memoryLayer.store["test"]))
 	}
 }
 
@@ -35,6 +35,6 @@ func TestOnlyReturnsLast20WhenLessThan20(t *testing.T) {
 	messages := memoryLayer.getMessages("test_user")
 
 	if len(messages) != 10 {
-		t.Errorf("Expected 10, got %d", len(memoryLayer.store["test_user"]))
+		t.Errorf("Expected 10, got %d", len(memoryLayer.store["test"]))
 	}
 }

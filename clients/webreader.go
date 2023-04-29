@@ -47,6 +47,7 @@ func ExtractBodyFromWebsite(url string) (string, error) {
 	wg.Add(1)
 
 	c := colly.NewCollector()
+
 	bodyText := ""
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 
@@ -57,6 +58,10 @@ func ExtractBodyFromWebsite(url string) (string, error) {
 		})
 
 		fmt.Println(e.Text)
+		wg.Done()
+	})
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 		wg.Done()
 	})
 	c.Visit(url)
