@@ -18,6 +18,7 @@ func NewSecurity(child Layer) *Security {
 
 	return &Security{
 		admin: admin,
+		child: child,
 	}
 }
 
