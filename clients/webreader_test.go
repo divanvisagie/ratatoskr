@@ -7,7 +7,7 @@ func TestShorten(t *testing.T) {
 	in fact, it contains so many words that it is hard to count them all
 	so we will just assume that there are many words`, 3)
 
-	expected := `thi`
+	expected := `this is a`
 	if actual != expected {
 		t.Errorf("Expected %s, got %s", expected, actual)
 	}

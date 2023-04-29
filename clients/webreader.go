@@ -9,12 +9,26 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func shorten(text string, limit int) string {
+func countTokens(input string) int {
+	// Split the input string into words using the Fields function from the strings package
+	words := strings.Fields(input)
 
-	//limit text to 1000 characters
-	if len(text) > limit {
-		text = text[:limit]
+	// Return the length of the resulting slice
+	return len(words)
+}
+
+// Shorten text to a specific amount of tokens
+func shorten(text string, limit int) string {
+	tc := countTokens(text)
+
+	if tc > limit {
+		// Split the input string into words using the Fields function from the strings package
+		words := strings.Fields(text)
+
+		// Return the length of the resulting slice
+		return strings.Join(words[:limit], " ")
 	}
+
 	return text
 }
 
