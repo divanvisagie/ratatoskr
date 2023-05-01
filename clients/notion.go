@@ -109,51 +109,118 @@ func (n *Notion) AddLinkToTodaysPage(link string, summary string) error {
 		return err
 	}
 
-	for _, result := range todaysPage.Results {
+	var result ResultObject
+	if len(todaysPage.Results) == 0 {
+		r, err := n.CreatePageForToday([]string{"Ratatoskr"})
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		result = r
+	} else {
+		result = todaysPage.Results[0]
+	}
 
-		requestBody := map[string]interface{}{
-			"children": []interface{}{
-				map[string]interface{}{
-					"object": "block",
-					"type":   "paragraph",
-					"paragraph": map[string]interface{}{
-						"rich_text": []interface{}{
-							map[string]interface{}{
-								"type": "text",
-								"text": map[string]interface{}{
-									"content": summary,
-								},
+	requestBody := map[string]interface{}{
+		"children": []interface{}{
+			map[string]interface{}{
+				"object": "block",
+				"type":   "paragraph",
+				"paragraph": map[string]interface{}{
+					"rich_text": []interface{}{
+						map[string]interface{}{
+							"type": "text",
+							"text": map[string]interface{}{
+								"content": summary,
 							},
 						},
 					},
 				},
-				map[string]interface{}{
-					"object": "block",
-					"type":   "bookmark",
-					"bookmark": map[string]interface{}{
-						"url": link,
+			},
+			map[string]interface{}{
+				"object": "block",
+				"type":   "bookmark",
+				"bookmark": map[string]interface{}{
+					"url": link,
+				},
+			},
+		},
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	url := fmt.Sprintf("https://api.notion.com/v1/blocks/%s/children", result.ID)
+	body, err := doRequestToNotion("PATCH", n.token, url, jsonBody)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	fmt.Println(string(body))
+
+	return nil
+}
+
+func (n *Notion) CreatePageForToday(tags []string) (ResultObject, error) {
+	dayOfWeek := time.Now().Format("Monday")
+	today := time.Now().Format("2006-01-02")
+
+	tag_options := make([]interface{}, len(tags))
+	for i, tag := range tags {
+		tag_options[i] = map[string]interface{}{
+			"name": tag,
+		}
+	}
+
+	requestBody := map[string]interface{}{
+		"parent": map[string]interface{}{
+			"database_id": n.journalPageID,
+		},
+		"properties": map[string]interface{}{
+			"Tags": map[string]interface{}{
+				"multi_select": tag_options,
+			},
+			"Date": map[string]interface{}{
+				"date": map[string]interface{}{
+					"start": today,
+				},
+			},
+			"Name": map[string]interface{}{
+				"title": []interface{}{
+					map[string]interface{}{
+						"text": map[string]interface{}{
+							"content": dayOfWeek,
+						},
 					},
 				},
 			},
-		}
-
-		jsonBody, err := json.Marshal(requestBody)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		url := fmt.Sprintf("https://api.notion.com/v1/blocks/%s/children", result.ID)
-		body, err := doRequestToNotion("PATCH", n.token, url, jsonBody)
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-
-		fmt.Println(string(body))
-
-		break //we only ever want to do it for the first one
+		},
 	}
 
-	return nil
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		log.Println(err)
+		return ResultObject{}, err
+	}
+
+	url := "https://api.notion.com/v1/pages"
+	body, err := doRequestToNotion("POST", n.token, url, jsonBody)
+	if err != nil {
+		log.Println(err)
+		return ResultObject{}, err
+	}
+
+	// Parse the response JSON into a Response struct
+	var response ResultObject
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		fmt.Println("Error unmarshaling response body:", err)
+		return ResultObject{}, err
+	}
+
+	return response, nil
 }
