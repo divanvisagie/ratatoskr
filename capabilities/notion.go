@@ -11,6 +11,7 @@ import (
 type Notion struct {
 	admin        string
 	systemPrompt string
+	notion       *client.Notion
 }
 
 func NewNotion() *Notion {
@@ -32,7 +33,10 @@ func NewNotion() *Notion {
 	to provide the best summary possible. Tell the user what the link is 
 	about and what can be learned from it. Remember to highlight any stand 
 	out points that may contain unexpected conclusions or information.`)
-	return &Notion{admin, systemPrompt}
+
+	notion := client.NewNotion()
+
+	return &Notion{admin, systemPrompt, notion}
 }
 
 func (c Notion) Check(req *types.RequestMessage) bool {
@@ -55,6 +59,11 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 
 	summary := client.NewOpenAIClient(c.systemPrompt).Complete(body)
 	// TODO: Write to Notion
+
+	err = c.notion.AddLinkToTodaysPage(link, summary)
+	if err != nil {
+		return types.ResponseMessage{}, err
+	}
 
 	// Scrape website for main content
 	res := types.ResponseMessage{
