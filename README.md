@@ -14,12 +14,16 @@ Instead of just pasting links into the "Saved Messages" chat in Telegram.
 
 When you paste a link, Ratatoskr will attempt to read it and then Use ChatGPT to summarise it's contents, it will then save the link and the summary to a Notion database. These saves are non-destuctive as Ratatoskr is meant to be used not only as a bookmark manager but an enhancement to keeping daily notes inside of Notion.
 
+## Limitations
+Although it can support multiple users for returning summaries, Ratatoskr is currently only able to save links to notion for the designated Admin user. I designed it to solve a problem for myself and at present do not intend to expand my current instance to be a multi user platform, it is however easy to deploy yourself and due to the way the Telegram API is implemented, can actually be run on your local machine. I have however included a "Deploy to [Railway](https://railway.app?referralCode=JU48xV)" button at the top if the page since that is where I host my instance.
+
+You can learn more about the setup in the [Running Ratatoskr](#running-ratatoskr) section.
+
 
 ## Architecture
 The architecture is constructed by two main concepts, layers and capabilities. Layers are responsible for intercepting RequestMessages and processing them in some way. For example the MemoryLayer will store the messages that pass through it but also enrich RequestMessages with a context for the conversation history for that user.
 
-Capabilities are responsible for executing a specific task, they also contain a `Check` function that determines if the capability should be executed for a given RequestMessage. For example the LinkProcessorCapability will check if the RequestMessage contains a link and if so it will process it.
-
+Capabilities are responsible for executing a specific task, they also contain a `Check` function that determines if the capability should be executed for a given RequestMessage. For example the LinkProcessorCapability will check if the RequestMessage contains a link and if so it will process it. 
     
 ### User Flow
 ```mermaid
@@ -72,8 +76,7 @@ sequenceDiagram
 ```
 
 ## Running Ratatoskr
-Ratatoskr runs as a simple go program and currently has no database, all storage is in memory. Therefore you only need to set up a few environment variables and you are good to go. You can easily deploy it in something like [Railway](https://railway.app?referralCode=JU48xV).
-
+Ratatoskr runs as a simple go program and currently has no database, all storage is in memory. Therefore you only need to set up a few environment variables and you are good to go. You can easily deploy it in something like 
 ### Environment Variables
 | Name | Description |
 | --- | --- | 
