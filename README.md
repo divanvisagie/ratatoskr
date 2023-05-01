@@ -63,20 +63,20 @@ Capabilities are responsible for executing a specific task, they also contain a 
 
 ```mermaid
 
-graph TD
+graph
     subgraph Ratatoskr
         subgraph Telegram Bot
             H[Handler]
         end
         subgraph Layers
-            SL[SecurityLayer]
-            ML[MemoryLayer]
-            CS[CapabilitySelectorLayer]
+            SL[Security]
+            ML[Memory]
+            CS[CapabilitySelector]
         end
         subgraph Capabilities
-            G[GPTCapability]
-            C[LinkProcessorCapability]
-            N[NotionCapability]
+            G[GPT]
+            C[LinkProcessor]
+            N[Notion]
         end
         H --> SL
         SL --> ML
