@@ -1,6 +1,7 @@
 package capabilities
 
 import (
+	"fmt"
 	"os"
 	client "ratatoskr/clients"
 	"ratatoskr/types"
@@ -58,17 +59,22 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 	}
 
 	summary := client.NewOpenAIClient(c.systemPrompt).Complete(body)
-	// TODO: Write to Notion
 
-	err = c.notion.AddLinkToTodaysPage(link, summary)
+	result, err := c.notion.AddLinkToTodaysPage(link, summary)
 	if err != nil {
 		return types.ResponseMessage{}, err
 	}
 
+	responseText := fmt.Sprintf(`**I have added the following [here](%s) to your journal in Notion:** 
+
+	%s
+	
+	%s`, result.URL, summary, link)
+
 	// Scrape website for main content
 	res := types.ResponseMessage{
 		ChatID:  req.ChatID,
-		Message: summary,
+		Message: strings.TrimSpace(responseText),
 	}
 	return res, nil
 }

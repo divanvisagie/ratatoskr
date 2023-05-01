@@ -20,6 +20,7 @@ type ResultObject struct {
 	Object      string `json:"object"`
 	ID          string `json:"id"`
 	CreatedTime string `json:"created_time"`
+	URL         string `json:"url"`
 }
 
 type TodaysPageResult struct {
@@ -101,12 +102,12 @@ func (n *Notion) GetTodaysPage() (TodaysPageResult, error) {
 	return response, nil
 }
 
-func (n *Notion) AddLinkToTodaysPage(link string, summary string) error {
+func (n *Notion) AddLinkToTodaysPage(link string, summary string) (ResultObject, error) {
 
 	todaysPage, err := n.GetTodaysPage()
 	if err != nil {
 		log.Println(err)
-		return err
+		return ResultObject{}, err
 	}
 
 	var result ResultObject
@@ -114,7 +115,7 @@ func (n *Notion) AddLinkToTodaysPage(link string, summary string) error {
 		r, err := n.CreatePageForToday([]string{"Ratatoskr"})
 		if err != nil {
 			log.Println(err)
-			return err
+			return ResultObject{}, err
 		}
 		result = r
 	} else {
@@ -150,19 +151,17 @@ func (n *Notion) AddLinkToTodaysPage(link string, summary string) error {
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
 		log.Println(err)
-		return err
+		return ResultObject{}, err
 	}
 
 	url := fmt.Sprintf("https://api.notion.com/v1/blocks/%s/children", result.ID)
-	body, err := doRequestToNotion("PATCH", n.token, url, jsonBody)
+	_, err = doRequestToNotion("PATCH", n.token, url, jsonBody)
 	if err != nil {
 		log.Println(err)
-		return err
+		return ResultObject{}, err
 	}
 
-	fmt.Println(string(body))
-
-	return nil
+	return result, nil
 }
 
 func (n *Notion) CreatePageForToday(tags []string) (ResultObject, error) {
