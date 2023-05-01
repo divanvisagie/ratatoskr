@@ -64,35 +64,27 @@ Capabilities are responsible for executing a specific task, they also contain a 
 ```mermaid
 
 graph TD
-    H[Handler]
-    subgraph Layers
-        subgraph Security
+    subgraph Ratatoskr
+        subgraph Telegram Bot
+            H[Handler]
+        end
+        subgraph Layers
             SL[SecurityLayer]
-        end
-        subgraph Memory
             ML[MemoryLayer]
-        end
-        subgraph CapabilitySelector
             CS[CapabilitySelectorLayer]
         end
-    end
-    subgraph Capabilities
-        subgraph GPT
+        subgraph Capabilities
             G[GPTCapability]
-        end
-        subgraph LinkProcessor
             C[LinkProcessorCapability]
-        end
-        subgraph Notion
             N[NotionCapability]
         end
+        H --> SL
+        SL --> ML
+        ML --> CS
+        CS --> G
+        CS --> C
+        CS --> N
     end
-    H --> SL
-    SL --> ML
-    ML --> CS
-    CS --> G
-    CS --> C
-    CS --> N
 
 ```
 
