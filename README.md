@@ -10,9 +10,7 @@ Ratatoskr is a Telegram bot designed to help you manage your bookmarks by levera
 
 ![Ratataoskr demo gif](./docs/demo.gif)
 
-Instead of just pasting links into the "Saved Messages" chat in Telegram. 
-
-When you paste a link, Ratatoskr will attempt to read it and then Use ChatGPT to summarise it's contents, it will then save the link and the summary to a Notion database. These saves are non-destuctive as Ratatoskr is meant to be used not only as a bookmark manager but an enhancement to keeping daily notes inside of Notion.
+Instead of just pasting links into the "Saved Messages" chat in Telegram, when you paste a link to Ratatoskr, It will attempt to read it and then Use ChatGPT to summarise it's contents, it will then save the link and the summary to a Notion database. These saves are non-destuctive as Ratatoskr is meant to be used not only as a bookmark manager but an enhancement to keeping daily notes inside of Notion.
 
 ## Limitations
 Although it can support multiple users for returning summaries, Ratatoskr is currently only able to save links to notion for the designated Admin user. I designed it to solve a problem for myself and at present do not intend to expand my current instance to be a multi user platform, it is however easy to deploy yourself and due to the way the Telegram API is implemented, can actually be run on your local machine. I have however included a "Deploy to [Railway](https://railway.app?referralCode=JU48xV)" button at the top if the page since that is where I host my instance.
