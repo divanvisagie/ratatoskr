@@ -3,12 +3,17 @@
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/nYYnER?referralCode=JU48xV)
 
 
-Ratatoskr is a Telegram bot designed to help you deal with web links that you would usually paste into the "Saved Messages" chat. It is named after the squirrel Ratatoskr from Norse mythology, who would run up and down the world tree Yggdrasil to deliver messages between the eagle at the top and the serpent at the bottom.
-
-We don't have any mythological trees, but the idea is that when you paste a link here, Ratatoskr will take the appropriate action, for example for basic web pages it 
-will read and summarise the link as well as save it for later reading in a notion database. For Youtube links it will process the video audio using OpenAI whisper, return a summary of the video and save the video and the summary to a notion database. For links to PDFs it will save the PDF to a notion database. 
-
 ![Ratatoskr logo](./docs/logo-256.png)
+
+
+Ratatoskr is a Telegram bot designed to help you manage your bookmarks by leveraging OpenAI's GPT Models and Notion to keep a journal of your links and provide summaries of their conents. It is named after the squirrel Ratatoskr from Norse mythology, who would run up and down the world tree Yggdrasil to deliver messages between the eagle at the top and the serpent at the bottom.
+
+![Ratataoskr demo gif](./docs/demo.gif)
+
+Instead of just pasting links into the "Saved Messages" chat in Telegram. 
+
+When you paste a link, Ratatoskr will attempt to read it and then Use ChatGPT to summarise it's contents, it will then save the link and the summary to a Notion database. These saves are non-destuctive as Ratatoskr is meant to be used not only as a bookmark manager but an enhancement to keeping daily notes inside of Notion.
+
 
 ## Architecture
 The architecture is constructed by two main concepts, layers and capabilities. Layers are responsible for intercepting RequestMessages and processing them in some way. For example the MemoryLayer will store the messages that pass through it but also enrich RequestMessages with a context for the conversation history for that user.
@@ -77,7 +82,7 @@ Ratatoskr runs as a simple go program and currently has no database, all storage
 | TELEGRAM_USERS | A comma separated list of all the users you want to allow to use this bot |
 | OPENAI_API_KEY | [API token](https://platform.openai.com/account/api-keys) for access to GPT 3.5 Turbo |
 | NOTION_TOKEN | [Notion API token](https://www.notion.so/my-integrations) for access to your notion database |
-| NOTION_JOURNAL_DB | The ID of the notion database you want to save links to |
+| NOTION_JOURNAL_DB | The ID of the notion database you want to save links to, you might need to share your database with the integration you set up, so consult the Notion documentation [here](https://developers.notion.com/docs/create-a-notion-integration#step-2-share-a-database-with-your-integration) |
 
 
 
