@@ -6,7 +6,7 @@
 ![Ratatoskr logo](./docs/logo-256.png)
 
 
-Ratatoskr is a Telegram bot designed to help you manage your bookmarks by leveraging OpenAI's GPT Models and Notion to keep a journal of your links and provide summaries of their conents. It is named after the squirrel Ratatoskr from Norse mythology, who would run up and down the world tree Yggdrasil to deliver messages between the eagle at the top and the serpent at the bottom.
+Ratatoskr is a Telegram bot designed to help you manage your bookmarks by leveraging OpenAI's GPT Models and Notion to keep a journal of your links and provide summaries of their contents. It is named after the squirrel Ratatoskr from Norse mythology, who would run up and down the world tree Yggdrasil to deliver messages between the eagle at the top and the serpent at the bottom.
 
 ![Ratataoskr demo gif](./docs/demo.gif)
 
