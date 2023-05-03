@@ -65,8 +65,8 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 		return types.ResponseMessage{}, err
 	}
 
-	responseText := fmt.Sprintf(`**I have added the following [here](%s) to your journal in Notion:** 
-
+	responseText := fmt.Sprintf(`**I have added the following [here](%s) to your journal in Notion:**
+	
 	%s
 	
 	%s`, result.URL, summary, link)

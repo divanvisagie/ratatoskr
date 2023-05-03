@@ -1,6 +1,9 @@
 package client
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestShorten(t *testing.T) {
 	actual := shorten(`this is a text that contains many many words
@@ -15,6 +18,7 @@ func TestShorten(t *testing.T) {
 
 func TestExtractBodyFromWebsite(t *testing.T) {
 	urls := []string{
+		"https://github.com/ThePrimeagen/aoc/blob/2022/src/bin/day6_2.rs",
 		"https://chat.openai.com/",
 		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 		"https://github.com/dstotijn/go-notion",
@@ -28,6 +32,14 @@ func TestExtractBodyFromWebsite(t *testing.T) {
 
 		if len(bodyText) == 0 {
 			t.Errorf("Expected body text to be longer than 0 characters")
+		}
+
+		// Check if the extracted text does not contain script-related content
+		if strings.Contains(strings.ToLower(bodyText), "<script>") ||
+			strings.Contains(strings.ToLower(bodyText), "</script>") ||
+			strings.Contains(strings.ToLower(bodyText), "<noscript>") ||
+			strings.Contains(strings.ToLower(bodyText), "</noscript>") {
+			t.Errorf("Extracted text should not contain script-related content")
 		}
 	}
 }

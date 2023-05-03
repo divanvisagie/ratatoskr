@@ -67,5 +67,9 @@ func (c *OpenAiClient) Complete(message string) string {
 		log.Println(err)
 	}
 
+	if len(resp.Choices) == 0 {
+		return "I was unable to summarise this article"
+	}
+
 	return resp.Choices[0].Message.Content
 }
