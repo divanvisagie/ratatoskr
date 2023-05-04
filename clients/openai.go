@@ -38,7 +38,6 @@ func (c *OpenAiClient) SetHistory(history []openai.ChatCompletionMessage) *OpenA
 }
 
 func (c *OpenAiClient) Complete(message string) string {
-
 	messages := []openai.ChatCompletionMessage{
 		{
 			Role:    openai.ChatMessageRoleSystem,
