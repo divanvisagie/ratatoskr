@@ -4,6 +4,7 @@ import (
 	"log"
 	"ratatoskr/capabilities"
 	"ratatoskr/layers"
+	"ratatoskr/repositories"
 	"ratatoskr/types"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,6 +16,8 @@ type Handler struct {
 }
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
+	memRepo := repositories.NewMessageRepository()
+
 	capabilities := []types.Capability{
 		capabilities.NewNotion(),
 		capabilities.NewLinkProcessor(),
@@ -23,7 +26,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 
 	//build up the layers
 	capabilityLayer := layers.NewCapabilitySelector(capabilities)
-	memoryLayer := layers.NewMemoryLayer(capabilityLayer)
+	memoryLayer := layers.NewMemoryLayer(memRepo, capabilityLayer)
 	securityLayer := layers.NewSecurity(memoryLayer)
 
 	return &Handler{bot: bot, gatewayLayer: securityLayer}
