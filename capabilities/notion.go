@@ -4,18 +4,22 @@ import (
 	"fmt"
 	"os"
 	client "ratatoskr/clients"
+	"ratatoskr/repositories"
 	"ratatoskr/types"
 	"regexp"
 	"strings"
+
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type Notion struct {
 	admin        string
 	systemPrompt string
 	notion       *client.Notion
+	repo         *repositories.Message
 }
 
-func NewNotion() *Notion {
+func NewNotion(repo *repositories.Message) *Notion {
 	admin := os.Getenv("TELEGRAM_ADMIN")
 	systemPrompt := strings.TrimSpace(`Ratatoskr, is an EI (Extended Intelligence). 
 	An extended intelligence is a software system 
@@ -26,10 +30,12 @@ func NewNotion() *Notion {
 	You are part of the link processing module, whose job it is to take a
 	link and return a summary of the content that will provide good keywords
 	when searching for it since the link and the summary will be stored in
-	Notion wof the user. You will be provided the link 
-	and a summary message if possible. The summary is extracted 
-	directly from the html body and may contain some junk data. If the page cannot be
-	parsed the body will just be the value "None". Use the 
+	Notion for the user. You will be provided the link by the user and the body will
+	be provided in a system message just before it.
+
+	The body is extracted directly from the html body of the website by the system
+	and may contain some junk data. If the page cannot be
+	parsed the body will just be the value "<None>". Use the 
 	body and your existing knowledge of the site where possible 
 	to provide the best summary possible. Tell the user what the link is 
 	about and what can be learned from it. Remember to highlight any stand 
@@ -37,7 +43,7 @@ func NewNotion() *Notion {
 
 	notion := client.NewNotion()
 
-	return &Notion{admin, systemPrompt, notion}
+	return &Notion{admin, systemPrompt, notion, repo}
 }
 
 func (c Notion) Check(req *types.RequestMessage) bool {
@@ -58,7 +64,18 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 		return types.ResponseMessage{}, err
 	}
 
-	summary := client.NewOpenAIClient(c.systemPrompt).Complete(body)
+	c.repo.SaveMessage(repositories.System, req.UserName, fmt.Sprintf(`Website body text: %s`, body))
+
+	//get context
+	context := c.repo.GetMessages(req.UserName)
+	history := make([]openai.ChatCompletionMessage, len(context))
+	for i, message := range context {
+		history[i] = messageToChatCompletionMessage(message)
+	}
+
+	summary := client.NewOpenAIClient(c.systemPrompt).SetHistory(history).Complete(
+		fmt.Sprintf(`What is the website about? %s`, link),
+	)
 
 	result, err := c.notion.AddLinkToTodaysPage(link, summary)
 	if err != nil {

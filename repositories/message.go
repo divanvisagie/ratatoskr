@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"ratatoskr/types"
 	"sort"
 	"time"
@@ -14,17 +15,17 @@ const (
 	Assistant Role = "assistant"
 )
 
-type MessageRepository struct {
+type Message struct {
 	store map[string][]types.StoredMessage
 }
 
-func NewMessageRepository() *MessageRepository {
-	return &MessageRepository{
+func NewMessageRepository() *Message {
+	return &Message{
 		store: make(map[string][]types.StoredMessage),
 	}
 }
 
-func (m *MessageRepository) GetMessages(username string) []types.StoredMessage {
+func (m *Message) GetMessages(username string) []types.StoredMessage {
 	// messages := make([]types.StoredMessage, 0)
 	messages := m.store[username]
 	sort.Slice(messages, func(i, j int) bool {
@@ -41,7 +42,7 @@ func (m *MessageRepository) GetMessages(username string) []types.StoredMessage {
 	return messages
 }
 
-func (m *MessageRepository) SaveMessage(role Role, username string, message string) {
+func (m *Message) SaveMessage(role Role, username string, message string) {
 
 	now := time.Now()
 	timestamp := now.UnixMilli()
@@ -53,4 +54,5 @@ func (m *MessageRepository) SaveMessage(role Role, username string, message stri
 		Message:   message,
 		Timestamp: timestamp,
 	})
+	fmt.Printf("Saved message %s from %s at %d\n", message, username, timestamp)
 }

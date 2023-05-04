@@ -19,7 +19,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	memRepo := repositories.NewMessageRepository()
 
 	capabilities := []types.Capability{
-		capabilities.NewNotion(),
+		capabilities.NewNotion(memRepo),
 		capabilities.NewLinkProcessor(),
 		capabilities.NewChatGPT(),
 	}

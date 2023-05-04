@@ -36,9 +36,14 @@ func messageToChatCompletionMessage(message types.StoredMessage) openai.ChatComp
 			Role:    openai.ChatMessageRoleUser,
 			Content: message.Message,
 		}
-	} else {
+	} else if message.Role == "assistant" {
 		return openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleAssistant,
+			Content: message.Message,
+		}
+	} else {
+		return openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
 			Content: message.Message,
 		}
 	}
