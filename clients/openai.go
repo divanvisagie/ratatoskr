@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"ratatoskr/utils"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -48,11 +49,19 @@ func (c *OpenAiClient) AddUserMessage(message string) *OpenAiClient {
 }
 
 func (c *OpenAiClient) Complete() string {
+	ctx, err := utils.ShortenContext(c.context, utils.MODEL_LIMIT)
+
+	if err != nil {
+		log.Println(err)
+		return `The article you sent was a bit too long to summarise, 
+		this may be due to a parsing error`
+	}
+
 	resp, err := c.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:     openai.GPT3Dot5Turbo,
-			Messages:  c.context,
+			Messages:  ctx,
 			MaxTokens: c.maxTokens,
 		},
 	)
@@ -60,7 +69,6 @@ func (c *OpenAiClient) Complete() string {
 	if err != nil {
 		log.Println(err)
 	}
-
 	if len(resp.Choices) == 0 {
 		return "I was unable to summarise this article"
 	}

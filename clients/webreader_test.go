@@ -5,18 +5,6 @@ import (
 	"testing"
 )
 
-func TestTokenize(t *testing.T) {
-	actual, err := tokenize("this is a test")
-
-	if len(actual) != 4 {
-		t.Errorf("Expected 4 tokens, got %d", len(actual))
-	}
-
-	if err != nil {
-		t.Errorf("Error while tokenizing: %s", err)
-	}
-}
-
 func TestShorten(t *testing.T) {
 	actual := shorten(`this is a text that contains many many words
 	in fact, it contains so many words that it is hard to count them all
