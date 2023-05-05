@@ -1,25 +1,23 @@
-package capabilities
+package caps
 
 import (
 	"fmt"
 	"os"
 	client "ratatoskr/clients"
-	"ratatoskr/repositories"
+	"ratatoskr/repos"
 	"ratatoskr/types"
 	"regexp"
 	"strings"
-
-	openai "github.com/sashabaranov/go-openai"
 )
 
 type Notion struct {
 	admin        string
 	systemPrompt string
 	notion       *client.Notion
-	repo         *repositories.Message
+	repo         *repos.Message
 }
 
-func NewNotion(repo *repositories.Message) *Notion {
+func NewNotion(repo *repos.Message) *Notion {
 	admin := os.Getenv("TELEGRAM_ADMIN")
 	systemPrompt := strings.TrimSpace(`Ratatoskr, is an EI (Extended Intelligence). 
 	An extended intelligence is a software system 
@@ -47,6 +45,10 @@ func NewNotion(repo *repositories.Message) *Notion {
 }
 
 func (c Notion) Check(req *types.RequestMessage) bool {
+
+	if !getFeatureIsEnabled("notion") {
+		return false
+	}
 	if req.UserName != c.admin {
 		return false
 	}
@@ -63,19 +65,12 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 	if err != nil {
 		return types.ResponseMessage{}, err
 	}
-
-	c.repo.SaveMessage(repositories.System, req.UserName, fmt.Sprintf(`Website body text: %s`, body))
+	c.repo.SaveMessage(repos.System, req.UserName, fmt.Sprintf(`Website body text: %s`, body))
 
 	//get context
-	context := c.repo.GetMessages(req.UserName)
-	history := make([]openai.ChatCompletionMessage, len(context))
-	for i, message := range context {
-		history[i] = messageToChatCompletionMessage(message)
-	}
+	history := getContextFromRepo(c.repo, req.UserName)
 
-	summary := client.NewOpenAIClient(c.systemPrompt).SetHistory(history).Complete(
-		fmt.Sprintf(`What is the website about? %s`, link),
-	)
+	summary := getSummaryFromChatGpt(history)
 
 	result, err := c.notion.AddLinkToTodaysPage(link, summary)
 	if err != nil {

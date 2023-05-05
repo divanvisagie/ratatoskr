@@ -13,7 +13,7 @@ type OpenAiClient struct {
 	systemPrompt string
 	client       *openai.Client
 	maxTokens    int
-	history      []openai.ChatCompletionMessage
+	context      []openai.ChatCompletionMessage
 }
 
 func NewOpenAIClient(prompt string) *OpenAiClient {
@@ -23,7 +23,7 @@ func NewOpenAIClient(prompt string) *OpenAiClient {
 		client:       client,
 		maxTokens:    750,
 		systemPrompt: prompt,
-		history:      []openai.ChatCompletionMessage{},
+		context:      []openai.ChatCompletionMessage{},
 	}
 }
 
@@ -33,31 +33,26 @@ func (c *OpenAiClient) SetMaxTokens(maxTokens int) *OpenAiClient {
 }
 
 func (c *OpenAiClient) SetHistory(history []openai.ChatCompletionMessage) *OpenAiClient {
-	c.history = history
+	c.context = history
 	return c
 }
 
-func (c *OpenAiClient) Complete(message string) string {
-	messages := []openai.ChatCompletionMessage{
-		{
-			Role:    openai.ChatMessageRoleSystem,
-			Content: c.systemPrompt,
-		},
-	}
-
-	messages = append(messages, c.history...)
-
+func (c *OpenAiClient) AddUserMessage(message string) *OpenAiClient {
 	prmt := openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: message,
 	}
-	messages = append(messages, prmt)
+	c.context = append(c.context, prmt)
 
+	return c
+}
+
+func (c *OpenAiClient) Complete() string {
 	resp, err := c.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
 			Model:     openai.GPT3Dot5Turbo,
-			Messages:  messages,
+			Messages:  c.context,
 			MaxTokens: c.maxTokens,
 		},
 	)

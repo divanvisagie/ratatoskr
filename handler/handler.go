@@ -2,9 +2,9 @@ package handler
 
 import (
 	"log"
-	"ratatoskr/capabilities"
+	"ratatoskr/caps"
 	"ratatoskr/layers"
-	"ratatoskr/repositories"
+	"ratatoskr/repos"
 	"ratatoskr/types"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -16,16 +16,16 @@ type Handler struct {
 }
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
-	memRepo := repositories.NewMessageRepository()
+	memRepo := repos.NewMessageRepository()
 
-	capabilities := []types.Capability{
-		capabilities.NewNotion(memRepo),
-		capabilities.NewLinkProcessor(),
-		capabilities.NewChatGPT(),
+	caps := []types.Capability{
+		caps.NewNotion(memRepo),
+		caps.NewLinkProcessor(memRepo),
+		caps.NewChatGPT(),
 	}
 
 	//build up the layers
-	capabilityLayer := layers.NewCapabilitySelector(capabilities)
+	capabilityLayer := layers.NewCapabilitySelector(caps)
 	memoryLayer := layers.NewMemoryLayer(memRepo, capabilityLayer)
 	securityLayer := layers.NewSecurity(memoryLayer)
 

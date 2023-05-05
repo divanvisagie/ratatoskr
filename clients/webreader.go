@@ -5,13 +5,18 @@ import (
 	"strings"
 	"sync"
 
+	"ratatoskr/utils"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 )
 
 // Shorten text to a specific amount of tokens
 func shorten(text string, limit int) string {
-	words := strings.Fields(text)
+	words, err := utils.Tokenize(text)
+	if err != nil {
+		words = strings.Fields(text)
+	}
 
 	if len(words) > limit {
 		// Split the input string into words using the Fields function from the strings package
@@ -30,9 +35,8 @@ func trimText(text string) string {
 
 	return trimmed
 }
-
 func ExtractBodyFromWebsite(url string) (string, error) {
-	// Sync code since this is intented to be a single user system
+	// Sync code since this is intended to be a single user system
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 
@@ -41,8 +45,13 @@ func ExtractBodyFromWebsite(url string) (string, error) {
 	bodyText := "None"
 	c.OnHTML("body", func(e *colly.HTMLElement) {
 
+		// Remove script tags
+		e.DOM.Find("script").Each(func(i int, s *goquery.Selection) {
+			s.Remove()
+		})
+
 		bodyText = e.Text
-		e.DOM.Find("#content").Each(func(i int, s *goquery.Selection) {
+		e.DOM.Find("main").Each(func(i int, s *goquery.Selection) {
 			fmt.Println(s.Text())
 			bodyText = s.Text()
 		})
