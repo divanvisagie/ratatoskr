@@ -1,6 +1,5 @@
 version: '3.7'
 services:
-
   vector-db:
     image: redis/redis-stack:latest
     ports:
