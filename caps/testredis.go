@@ -42,7 +42,7 @@ func (c TestRedis) Execute(req *types.RequestMessage) (types.ResponseMessage, er
 
 	rdb.Set(ctx, key, "working", time.Millisecond*500)
 
-	answer, err := rdb.Get(ctx, key).Result()
+	answer, err := rdb.Get(ctx, "messages").Result()
 	if err != nil {
 		res := types.ResponseMessage{
 			ChatID:  req.ChatID,
