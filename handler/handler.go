@@ -19,6 +19,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	memRepo := repos.NewMessageRepository()
 
 	caps := []types.Capability{
+		caps.NewMemoryDump(memRepo),
 		caps.NewMemoryWipe(memRepo),
 		caps.NewNotion(memRepo),
 		caps.NewLinkProcessor(memRepo),
@@ -73,6 +74,7 @@ func sendMenu(bot *tgbotapi.BotAPI, chatID int64) {
 	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("Clear memory"),
+			tgbotapi.NewKeyboardButton("Memory dump"),
 		),
 	)
 	bot.Send(msg)
