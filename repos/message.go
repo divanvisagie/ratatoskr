@@ -56,3 +56,7 @@ func (m *Message) SaveMessage(role Role, username string, message string) {
 	})
 	fmt.Printf("Saved message %s from %s at %d\n", message, username, timestamp)
 }
+
+func (m *Message) ClearMemory() {
+	m.store = make(map[string][]types.StoredMessage)
+}

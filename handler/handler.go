@@ -19,6 +19,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	memRepo := repos.NewMessageRepository()
 
 	caps := []types.Capability{
+		caps.NewMemoryWipe(memRepo),
 		caps.NewNotion(memRepo),
 		caps.NewLinkProcessor(memRepo),
 		caps.NewChatGPT(),
@@ -34,6 +35,11 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 	if update.Message != nil {
+		if update.Message.Text == "/menu" {
+			sendMenu(h.bot, update.Message.Chat.ID)
+			return
+		}
+
 		//simulate typing
 		typingMsg := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 		h.bot.Send(typingMsg)
@@ -59,4 +65,15 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 
 		h.bot.Send(msg)
 	}
+}
+
+// Function to send custom keyboard with menu options
+func sendMenu(bot *tgbotapi.BotAPI, chatID int64) {
+	msg := tgbotapi.NewMessage(chatID, "Select an option:")
+	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Clear memory"),
+		),
+	)
+	bot.Send(msg)
 }
