@@ -20,7 +20,10 @@ func (c MemoryDump) Check(req *types.RequestMessage) bool {
 }
 
 func (c MemoryDump) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {
-	messages := c.repo.GetMessages(req.UserName)
+	messages, err := c.repo.GetMessages(req.UserName)
+	if err != nil {
+		return types.ResponseMessage{}, err
+	}
 	var message string
 	for _, m := range messages {
 		message += fmt.Sprintf("%s, %s\n", m.Role, m.Message)

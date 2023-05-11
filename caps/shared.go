@@ -50,7 +50,11 @@ func containsLink(message string) bool {
 }
 
 func getContextFromRepo(repo *repos.Message, username string) []openai.ChatCompletionMessage {
-	context := repo.GetMessages(username)
+	context, err := repo.GetMessages(username)
+	if err != nil {
+		//TODO: Handle this error better
+		return []openai.ChatCompletionMessage{}
+	}
 	history := make([]openai.ChatCompletionMessage, len(context))
 	for i, message := range context {
 		history[i] = messageToChatCompletionMessage(message)
