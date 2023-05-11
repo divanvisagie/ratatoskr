@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 	"ratatoskr/caps"
 	"ratatoskr/layers"
 	"ratatoskr/repos"
 	"ratatoskr/types"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -52,7 +54,6 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 			Message:  update.Message.Text,
 			UserName: update.Message.From.UserName,
 		}
-
 		res, err := h.gatewayLayer.PassThrough(req)
 		if err != nil {
 			log.Println(err)
@@ -62,10 +63,20 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 			h.bot.Send(msg)
 		}
 
-		msg := tgbotapi.NewMessage(res.ChatID, res.Message)
-		msg.ParseMode = "markdown"
-
-		h.bot.Send(msg)
+		if res.Bytes != nil {
+			now := time.Now()
+			timestamp := now.UnixMilli()
+			key := fmt.Sprintf("%d", timestamp)
+			csvFile := tgbotapi.FileBytes{Name: key + "csv", Bytes: res.Bytes}
+			msg := tgbotapi.NewDocument(res.ChatID, csvFile)
+			h.bot.Send(msg)
+			//TODO
+		} else {
+			// Respond to the user
+			msg := tgbotapi.NewMessage(res.ChatID, res.Message)
+			msg.ParseMode = "markdown"
+			h.bot.Send(msg)
+		}
 	}
 }
 

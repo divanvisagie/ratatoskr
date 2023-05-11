@@ -23,11 +23,12 @@ func (c MemoryDump) Execute(req *types.RequestMessage) (types.ResponseMessage, e
 	messages := c.repo.GetMessages(req.UserName)
 	var message string
 	for _, m := range messages {
-		message += fmt.Sprintf("%s: %s\n", m.Role, m.Message)
+		message += fmt.Sprintf("%s, %s\n", m.Role, m.Message)
 	}
 	res := types.ResponseMessage{
 		ChatID:  req.ChatID,
 		Message: message,
+		Bytes:   []byte(message),
 	}
 	return res, nil
 }

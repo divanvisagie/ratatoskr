@@ -3,6 +3,7 @@ package types
 type ResponseMessage struct {
 	ChatID  int64
 	Message string
+	Bytes   []byte
 }
 
 type RequestMessage struct {
