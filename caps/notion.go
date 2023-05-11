@@ -52,9 +52,7 @@ func (c Notion) Check(req *types.RequestMessage) bool {
 	if req.UserName != c.admin {
 		return false
 	}
-
-	r := regexp.MustCompile(`(http|https)://`)
-	return r.MatchString(req.Message)
+	return containsLink(req.Message)
 }
 
 func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {

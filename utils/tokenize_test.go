@@ -52,6 +52,27 @@ func TestShortenContext(t *testing.T) {
 	}
 }
 
+func TestShortenContextWith1Item(t *testing.T) {
+	actual, err := ShortenContext([]openai.ChatCompletionMessage{
+		{
+			Role:    "system",
+			Content: "Hello, I am a chatbot.",
+		},
+		{
+			Role:    "user",
+			Content: "test",
+		},
+	}, 4096)
+
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+
+	if len(actual) != 1 {
+		t.Errorf("Expected 1 message, got %d", len(actual))
+	}
+}
+
 func TestReverse(t *testing.T) {
 	actual := reverse([]string{"a", "b", "c"})
 
