@@ -43,6 +43,7 @@ func (m *Message) GetMessages(username string) ([]types.StoredMessage, error) {
 	// retrieve messages from Redis
 	val, err := m.client.Get(ctx, username).Bytes()
 	if err != nil {
+		fmt.Println("Failed to retreive messages from Redis")
 		return nil, err
 	}
 
@@ -50,6 +51,7 @@ func (m *Message) GetMessages(username string) ([]types.StoredMessage, error) {
 	var messages []types.StoredMessage
 	err = json.Unmarshal(val, &messages)
 	if err != nil {
+		fmt.Println("Failed to unmarshal messages")
 		return nil, err
 	}
 
@@ -88,6 +90,7 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 	if len(val) > 0 {
 		err = json.Unmarshal(val, &messages)
 		if err != nil {
+			fmt.Println("Failed to unmarshal messages while saving new message")
 			return err
 		}
 	}
@@ -99,12 +102,14 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 	}
 	jsonBytes, err := json.Marshal(messages)
 	if err != nil {
+		fmt.Println("Failed to marshal messages while saving new message")
 		return err
 	}
 
 	// store the messages in Redis
-	err = m.client.Set(ctx, username, jsonBytes, time.Hour*4).Err()
+	err = m.client.Set(ctx, username, jsonBytes, 0).Err()
 	if err != nil {
+		fmt.Println("Failed to save messages to Redis")
 		return err
 	}
 
