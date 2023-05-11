@@ -53,8 +53,7 @@ func (c *OpenAiClient) Complete() string {
 
 	if err != nil {
 		log.Println(err)
-		return `The article you sent was a bit too long to summarise, 
-		this may be due to a parsing error`
+		return `There was an error while trying to shorten the context in the OpenAI client module.`
 	}
 
 	resp, err := c.client.CreateChatCompletion(
