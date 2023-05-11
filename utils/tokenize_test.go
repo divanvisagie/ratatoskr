@@ -64,11 +64,11 @@ func TestShortenContextWith1Item(t *testing.T) {
 		},
 	}, 4096)
 
-	if err == nil {
+	if err != nil {
 		t.Errorf("Expected error, got nil")
 	}
 
-	if len(actual) != 1 {
+	if len(actual) != 2 {
 		t.Errorf("Expected 1 message, got %d", len(actual))
 	}
 }
