@@ -1,7 +1,7 @@
 package caps
 
 import (
-	clients "ratatoskr/clients"
+	client "ratatoskr/client"
 	"ratatoskr/types"
 	"strings"
 
@@ -61,7 +61,7 @@ func (c ChatGPT) Execute(req *types.RequestMessage) (types.ResponseMessage, erro
 		history[i] = messageToChatCompletionMessage(message)
 	}
 
-	client := clients.NewOpenAIClient(c.systemPrompt).
+	client := client.NewOpenAIClient(c.systemPrompt).
 		SetHistory(history).
 		SetMaxTokens(500).AddUserMessage(req.Message)
 

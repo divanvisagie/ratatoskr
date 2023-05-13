@@ -2,7 +2,7 @@ package caps
 
 import (
 	"fmt"
-	client "ratatoskr/clients"
+	client "ratatoskr/client"
 	"ratatoskr/repos"
 	"ratatoskr/types"
 	"regexp"

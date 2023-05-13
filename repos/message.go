@@ -2,9 +2,12 @@ package repos
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"ratatoskr/client"
 	"ratatoskr/types"
 	"sort"
 	"time"
@@ -28,7 +31,7 @@ func NewMessageRepository() *Message {
 	url := os.Getenv("REDIS_URL")
 	opt, err := redis.ParseURL(url)
 	if err != nil {
-		fmt.Println("Redis is not working")
+		log.Printf("Redis is not working: %v", err)
 		return nil
 	}
 
@@ -43,15 +46,15 @@ func (m *Message) GetMessages(username string) ([]types.StoredMessage, error) {
 	// retrieve messages from Redis
 	val, err := m.client.Get(ctx, username).Bytes()
 	if err != nil {
-		fmt.Println("Failed to retreive messages from Redis")
-		return nil, err
+		log.Printf("Failed to retreive messages from Redis: %v", err)
+		return []types.StoredMessage{}, nil
 	}
 
 	// unmarshal the JSON-encoded messages
 	var messages []types.StoredMessage
 	err = json.Unmarshal(val, &messages)
 	if err != nil {
-		fmt.Println("Failed to unmarshal messages")
+		log.Printf("Failed to unmarshal messages: %v", err)
 		return nil, err
 	}
 
@@ -102,14 +105,14 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 	}
 	jsonBytes, err := json.Marshal(messages)
 	if err != nil {
-		fmt.Println("Failed to marshal messages while saving new message")
+		log.Printf("Failed to marshal messages while saving new message: %v", err)
 		return err
 	}
 
 	// store the messages in Redis
 	err = m.client.Set(ctx, username, jsonBytes, 0).Err()
 	if err != nil {
-		fmt.Println("Failed to save messages to Redis")
+		log.Printf("Failed to save messages to Redis: %v", err)
 		return err
 	}
 
@@ -122,4 +125,35 @@ func (m *Message) ClearMemory() {
 	// delete all keys in the Redis database
 	ctx := context.Background()
 	m.client.FlushAll(ctx)
+}
+
+// -----------------------------------------------------------------------------
+type Embedding struct {
+	Text      string
+	Embedding []float32
+	Role      Role
+	User      string
+}
+
+func (m *Message) RememberEmbedded(role Role, username string, message string) {
+	// Create openai vector with message
+	vector := client.Embed(message)
+	println(vector)
+
+	hash := md5.Sum([]byte(message))
+	key := fmt.Sprintf("embedding:%x", hash)
+
+	// Save embedding to Redis
+	ctx := context.Background()
+
+	embeddingJSON, err := json.Marshal(vector)
+	if err != nil {
+		log.Printf("Failed to marshal embedding: %v", err)
+		return
+	}
+
+	m.client.HSet(ctx, key, "embedding", string(embeddingJSON))
+	m.client.HSet(ctx, key, "role", string(role))
+	m.client.HSet(ctx, key, "user", username)
+	m.client.HSet(ctx, key, "text", message)
 }

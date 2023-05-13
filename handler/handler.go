@@ -21,7 +21,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	memRepo := repos.NewMessageRepository()
 
 	caps := []types.Capability{
-		caps.NewTestRedis(),
+		caps.NewTestRedis(memRepo),
 		caps.NewMemoryDump(memRepo),
 		caps.NewMemoryWipe(memRepo),
 		caps.NewNotion(memRepo),

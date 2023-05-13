@@ -74,3 +74,21 @@ func (c *OpenAiClient) Complete() string {
 
 	return resp.Choices[0].Message.Content
 }
+
+func Embed(message string) []float32 {
+	token := os.Getenv("OPENAI_API_KEY")
+	client := openai.NewClient(token)
+
+	req := openai.EmbeddingRequest{
+		Model: openai.AdaEmbeddingV2,
+		Input: []string{
+			message,
+		},
+	}
+
+	resp, err := client.CreateEmbeddings(context.Background(), req)
+	if err != nil {
+		log.Println(err)
+	}
+	return resp.Data[0].Embedding
+}
