@@ -49,8 +49,8 @@ func messageToChatCompletionMessage(message types.StoredMessage) openai.ChatComp
 	}
 }
 
-func (c ChatGPT) Check(req *types.RequestMessage) bool {
-	return true
+func (c ChatGPT) Check(req *types.RequestMessage) float32 {
+	return 1
 }
 
 func (c ChatGPT) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {

@@ -15,8 +15,11 @@ func NewMemoryDump(repo *repos.Message) *MemoryDump {
 	return &MemoryDump{repo}
 }
 
-func (c MemoryDump) Check(req *types.RequestMessage) bool {
-	return strings.ToLower(req.Message) == "memory dump"
+func (c MemoryDump) Check(req *types.RequestMessage) float32 {
+	if strings.ToLower(req.Message) == "memory dump" {
+		return 1
+	}
+	return 0
 }
 
 func (c MemoryDump) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {

@@ -13,10 +13,17 @@ func NewCapabilitySelector(caps []types.Capability) *CapabilitySelector {
 }
 
 func (c *CapabilitySelector) PassThrough(req *types.RequestMessage) (types.ResponseMessage, error) {
+	bestScore := float32(0)
+	var bestCapability types.Capability
+
 	for _, capability := range c.caps {
-		if capability.Check(req) {
-			return capability.Execute(req)
+		if score := capability.Check(req); score > bestScore {
+			bestScore = score
+			bestCapability = capability
+			if bestScore == 1 {
+				return capability.Execute(req)
+			}
 		}
 	}
-	return types.ResponseMessage{}, nil
+	return bestCapability.Execute(req)
 }

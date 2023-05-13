@@ -18,8 +18,11 @@ func NewTestRedis(repo *repos.Message) *TestRedis {
 	}
 }
 
-func (c TestRedis) Check(req *types.RequestMessage) bool {
-	return strings.ToLower(req.Message) == "test redis"
+func (c TestRedis) Check(req *types.RequestMessage) float32 {
+	if strings.ToLower(req.Message) == "test redis" {
+		return 1
+	}
+	return 0
 }
 
 func (c TestRedis) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {

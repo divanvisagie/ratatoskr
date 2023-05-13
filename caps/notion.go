@@ -44,15 +44,18 @@ func NewNotion(repo *repos.Message) *Notion {
 	return &Notion{admin, systemPrompt, notion, repo}
 }
 
-func (c Notion) Check(req *types.RequestMessage) bool {
+func (c Notion) Check(req *types.RequestMessage) float32 {
 
 	if !getFeatureIsEnabled("notion") {
-		return false
+		return 1
 	}
 	if req.UserName != c.admin {
-		return false
+		return 1
 	}
-	return containsLink(req.Message)
+	if containsLink(req.Message) {
+		return 1
+	}
+	return 0
 }
 
 func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {

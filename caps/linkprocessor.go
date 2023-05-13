@@ -16,11 +16,14 @@ func NewLinkProcessor(repo *repos.Message) *LinkProcessor {
 	return &LinkProcessor{repo}
 }
 
-func (c LinkProcessor) Check(req *types.RequestMessage) bool {
+func (c LinkProcessor) Check(req *types.RequestMessage) float32 {
 	if !getFeatureIsEnabled("link") {
-		return false
+		return 0
 	}
-	return containsLink(req.Message)
+	if containsLink(req.Message) {
+		return 1
+	}
+	return 0
 }
 
 func (c LinkProcessor) Execute(req *types.RequestMessage) (types.ResponseMessage, error) {

@@ -20,6 +20,6 @@ type StoredMessage struct {
 }
 
 type Capability interface {
-	Check(req *RequestMessage) bool
+	Check(req *RequestMessage) float32
 	Execute(req *RequestMessage) (ResponseMessage, error)
 }
