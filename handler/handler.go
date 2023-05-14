@@ -67,7 +67,7 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 			now := time.Now()
 			timestamp := now.UnixMilli()
 			key := fmt.Sprintf("%d", timestamp)
-			csvFile := tgbotapi.FileBytes{Name: key + "csv", Bytes: res.Bytes}
+			csvFile := tgbotapi.FileBytes{Name: key + ".csv", Bytes: res.Bytes}
 			msg := tgbotapi.NewDocument(res.ChatID, csvFile)
 			h.bot.Send(msg)
 			//TODO
