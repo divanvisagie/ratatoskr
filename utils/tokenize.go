@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/sashabaranov/go-openai"
 	"github.com/tiktoken-go/tokenizer"
@@ -12,16 +11,14 @@ import (
 const MODEL_LIMIT = 4096
 
 func Tokenize(text string) ([]string, error) {
-	words := strings.Fields(text)
-
 	enc, err := tokenizer.ForModel(tokenizer.Model(tokenizer.GPT35Turbo))
 	if err != nil {
-		panic("oh oh")
+		log.Printf("Error while creating tokenizer: %s", err)
 	}
 
 	// this should print a list of token ids
-	ids, _, _ := enc.Encode(text)
-	fmt.Println(ids)
+	_, words, _ := enc.Encode(text)
+	fmt.Println(words)
 
 	return words, nil
 }

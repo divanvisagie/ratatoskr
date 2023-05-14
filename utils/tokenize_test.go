@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/sashabaranov/go-openai"
@@ -11,6 +12,10 @@ func TestTokenize(t *testing.T) {
 
 	if len(actual) != 4 {
 		t.Errorf("Expected 4 tokens, got %d", len(actual))
+	}
+
+	if strings.Join(actual, "") != "this is a test" {
+		t.Errorf("Expected tokens to be 'this is a test', got %s", strings.Join(actual, " "))
 	}
 
 	if err != nil {
@@ -36,7 +41,7 @@ func TestShortenContext(t *testing.T) {
 			Role:    "user",
 			Content: "What is your name?",
 		},
-	}, 13)
+	}, 20)
 
 	if err != nil {
 		t.Errorf("Error while shortening context: %s", err)

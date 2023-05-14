@@ -23,7 +23,7 @@ func shorten(text string, limit int) string {
 
 		// Return the length of the resulting slice
 		cut := words[:limit]
-		return strings.Join(cut, " ")
+		return strings.Join(cut, "")
 	}
 
 	return strings.Join(words, " ")
