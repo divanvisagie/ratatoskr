@@ -102,10 +102,10 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 	
 	%s`, result.URL, summary, link)
 
-	// Scrape website for main content
 	res := types.ResponseMessage{
 		ChatID:  req.ChatID,
 		Message: strings.TrimSpace(responseText),
+		Context: context,
 	}
 	return res, nil
 }

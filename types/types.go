@@ -4,6 +4,7 @@ type ResponseMessage struct {
 	ChatID  int64
 	Message string
 	Bytes   []byte
+	Context []StoredMessage
 }
 
 type RequestMessage struct {
