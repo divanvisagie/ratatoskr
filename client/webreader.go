@@ -29,9 +29,9 @@ func shorten(text string, limit int) string {
 	return strings.Join(words, " ")
 }
 
-func trimText(text string) string {
+func trimText(text string, limit int) string {
 	trimmed := strings.TrimSpace(text)
-	trimmed = shorten(trimmed, 1000)
+	trimmed = shorten(trimmed, limit)
 
 	return trimmed
 }
@@ -67,5 +67,5 @@ func ExtractBodyFromWebsite(url string) (string, error) {
 
 	wg.Wait()
 
-	return trimText(bodyText), nil
+	return trimText(bodyText, 500), nil
 }
