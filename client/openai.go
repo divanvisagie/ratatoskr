@@ -22,7 +22,7 @@ func NewOpenAIClient(prompt string) *OpenAiClient {
 	client := openai.NewClient(token)
 	return &OpenAiClient{
 		client:       client,
-		maxTokens:    750,
+		maxTokens:    512,
 		systemPrompt: prompt,
 		context:      []openai.ChatCompletionMessage{},
 	}
@@ -49,7 +49,7 @@ func (c *OpenAiClient) AddUserMessage(message string) *OpenAiClient {
 }
 
 func (c *OpenAiClient) Complete() string {
-	ctx, err := utils.ShortenContext(c.context, utils.MODEL_LIMIT)
+	ctx, err := utils.ShortenContext(c.context, utils.MODEL_LIMIT - c.maxTokens)
 
 	if err != nil {
 		log.Println(err)

@@ -11,7 +11,7 @@ func main() {
 	token := os.Getenv("TELEGRAM_BOT_TOKEN")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("Failed to start: %v with token", err)
 	}
 	// bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
