@@ -11,20 +11,18 @@ import (
 
 type OpenAiClient struct {
 	// The bot token
-	systemPrompt string
-	client       *openai.Client
-	maxTokens    int
-	context      []openai.ChatCompletionMessage
+	client    *openai.Client
+	maxTokens int
+	context   []openai.ChatCompletionMessage
 }
 
-func NewOpenAIClient(prompt string) *OpenAiClient {
+func NewOpenAIClient() *OpenAiClient {
 	token := os.Getenv("OPENAI_API_KEY")
 	client := openai.NewClient(token)
 	return &OpenAiClient{
-		client:       client,
-		maxTokens:    512,
-		systemPrompt: prompt,
-		context:      []openai.ChatCompletionMessage{},
+		client:    client,
+		maxTokens: 512, //default
+		context:   []openai.ChatCompletionMessage{},
 	}
 }
 
@@ -34,7 +32,17 @@ func (c *OpenAiClient) SetMaxTokens(maxTokens int) *OpenAiClient {
 }
 
 func (c *OpenAiClient) SetHistory(history []openai.ChatCompletionMessage) *OpenAiClient {
-	c.context = history
+	c.context = append(c.context, history...)
+	return c
+}
+
+func (c *OpenAiClient) AddSystemMessage(message string) *OpenAiClient {
+	prmt := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: message,
+	}
+	c.context = append(c.context, prmt)
+
 	return c
 }
 
@@ -49,7 +57,7 @@ func (c *OpenAiClient) AddUserMessage(message string) *OpenAiClient {
 }
 
 func (c *OpenAiClient) Complete() string {
-	ctx, err := utils.ShortenContext(c.context, utils.MODEL_LIMIT - c.maxTokens)
+	ctx, err := utils.ShortenContext(c.context, utils.MODEL_LIMIT-c.maxTokens)
 
 	if err != nil {
 		log.Println(err)

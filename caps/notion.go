@@ -8,16 +8,17 @@ import (
 	"ratatoskr/types"
 	"regexp"
 	"strings"
+
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type Notion struct {
 	admin        string
 	systemPrompt string
 	notion       *client.Notion
-	repo         *repos.Message
 }
 
-func NewNotion(repo *repos.Message) *Notion {
+func NewNotion() *Notion {
 	admin := os.Getenv("TELEGRAM_ADMIN")
 	systemPrompt := strings.TrimSpace(`Ratatoskr, is an EI (Extended Intelligence). 
 	An extended intelligence is a software system 
@@ -41,7 +42,7 @@ func NewNotion(repo *repos.Message) *Notion {
 
 	notion := client.NewNotion()
 
-	return &Notion{admin, systemPrompt, notion, repo}
+	return &Notion{admin, systemPrompt, notion}
 }
 
 func (c Notion) Check(req *types.RequestMessage) float32 {
@@ -62,14 +63,31 @@ func (c Notion) Execute(req *types.RequestMessage) (types.ResponseMessage, error
 	r := regexp.MustCompile(`(http|https)://[^\s]+`)
 	link := r.FindString(req.Message)
 
+	context := []types.StoredMessage{}
+
+	//msg
+	um := repos.NewStoredMessage(
+		repos.User,
+		req.Message,
+	)
+	context = append(context, *um)
+
 	body, err := client.ExtractBodyFromWebsite(link)
 	if err != nil {
 		return types.ResponseMessage{}, err
 	}
-	c.repo.SaveMessage(repos.System, req.UserName, fmt.Sprintf(`Website body text: %s`, body))
+
+	sm := repos.NewStoredMessage(
+		repos.System,
+		fmt.Sprintf(`Website body text: %s`, body),
+	)
+	context = append(context, *sm)
 
 	//get context
-	history := getContextFromRepo(c.repo, req.UserName)
+	history := make([]openai.ChatCompletionMessage, len(context))
+	for i, message := range context {
+		history[i] = messageToChatCompletionMessage(message)
+	}
 
 	summary := getSummaryFromChatGpt(history)
 

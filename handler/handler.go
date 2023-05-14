@@ -24,7 +24,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 		caps.NewTestRedis(memRepo),
 		caps.NewMemoryDump(memRepo),
 		caps.NewMemoryWipe(memRepo),
-		caps.NewNotion(memRepo),
+		caps.NewNotion(),
 		caps.NewLinkProcessor(memRepo),
 		caps.NewChatGPT(),
 	}

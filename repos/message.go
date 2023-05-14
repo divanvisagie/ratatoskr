@@ -157,3 +157,14 @@ func (m *Message) RememberEmbedded(role Role, username string, message string) {
 	m.client.HSet(ctx, key, "user", username)
 	m.client.HSet(ctx, key, "text", message)
 }
+
+func NewStoredMessage(role Role, message string) *types.StoredMessage {
+	now := time.Now()
+	timestamp := now.UnixMilli()
+	storedMessage := &types.StoredMessage{
+		Role:      string(role),
+		Message:   message,
+		Timestamp: timestamp,
+	}
+	return storedMessage
+}

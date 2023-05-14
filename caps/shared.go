@@ -39,7 +39,7 @@ func getSummaryFromChatGpt(context []openai.ChatCompletionMessage) string {
 	about and what can be learned from it. Remember to highlight any stand 
 	out points that may contain unexpected conclusions or information.`)
 
-	summary := client.NewOpenAIClient(systemPrompt).SetHistory(context).Complete()
+	summary := client.NewOpenAIClient().AddSystemMessage(systemPrompt).SetHistory(context).Complete()
 	return summary
 }
 

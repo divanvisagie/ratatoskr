@@ -61,9 +61,11 @@ func (c ChatGPT) Execute(req *types.RequestMessage) (types.ResponseMessage, erro
 		history[i] = messageToChatCompletionMessage(message)
 	}
 
-	client := client.NewOpenAIClient(c.systemPrompt).
+	client := client.NewOpenAIClient().
+		AddSystemMessage(c.systemPrompt).
 		SetHistory(history).
-		SetMaxTokens(500).AddUserMessage(req.Message)
+		SetMaxTokens(500).
+		AddUserMessage(req.Message)
 
 	message := client.Complete()
 
