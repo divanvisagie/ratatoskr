@@ -42,7 +42,7 @@ func ShortenContext(context []openai.ChatCompletionMessage, limit int) ([]openai
 		}
 	}
 
-	if len(newContext) < 2 {
+	if len(newContext) < 2 && len(context) != len(newContext) {
 		return context, fmt.Errorf("the context could not be shortened to %d tokens", limit)
 	}
 

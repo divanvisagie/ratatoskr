@@ -63,10 +63,6 @@ func (m *Message) GetMessages(username string) ([]types.StoredMessage, error) {
 		return messages[i].Timestamp < messages[j].Timestamp
 	})
 
-	if len(messages) > 20 {
-		messages = messages[len(messages)-20:]
-	}
-
 	return messages, nil
 }
 
@@ -93,15 +89,15 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 	if len(val) > 0 {
 		err = json.Unmarshal(val, &messages)
 		if err != nil {
-			fmt.Println("Failed to unmarshal messages while saving new message")
+			log.Printf("Failed to unmarshal messages while saving new message")
 			return err
 		}
 	}
 
 	// append the new message and marshal all messages to JSON
 	messages = append(messages, storedMessage)
-	if len(messages) > 20 {
-		messages = messages[len(messages)-20:]
+	if len(messages) > 15 {
+		messages = messages[len(messages)-15:]
 	}
 	jsonBytes, err := json.Marshal(messages)
 	if err != nil {
