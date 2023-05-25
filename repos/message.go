@@ -80,6 +80,7 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 	// retrieve the existing messages from Redis
 	val, err := m.client.Get(ctx, username).Bytes()
 	if err != nil && err != redis.Nil {
+		log.Printf("Failed to retreive messages from Redis: %v", err)
 		return err
 	}
 
