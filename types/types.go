@@ -15,9 +15,9 @@ type RequestMessage struct {
 }
 
 type StoredMessage struct {
-	Role      string
-	Message   string
-	Timestamp int64
+	Role      string `json:"role"`
+	Message   string `json:"message"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 type Capability interface {
