@@ -19,9 +19,7 @@ func TestShorten(t *testing.T) {
 func TestExtractBodyFromWebsite(t *testing.T) {
 	urls := []string{
 		"https://github.com/ThePrimeagen/aoc/blob/2022/src/bin/day6_2.rs",
-		"https://chat.openai.com/",
-		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-		"https://github.com/dstotijn/go-notion",
+		"https://divanv.com/post/service-registry/",
 	}
 
 	for _, url := range urls {
