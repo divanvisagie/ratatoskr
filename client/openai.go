@@ -77,7 +77,7 @@ func (c *OpenAiClient) Complete() string {
 	resp, err := c.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:     openai.GPT3Dot5Turbo,
+			Model:     openai.GPT4,
 			Messages:  messages,
 			MaxTokens: c.maxTokens,
 		},
