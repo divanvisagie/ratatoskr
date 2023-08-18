@@ -3,10 +3,10 @@ package handler
 import (
 	"fmt"
 	"log"
-	"ratatoskr/caps"
-	"ratatoskr/layers"
-	"ratatoskr/repos"
-	"ratatoskr/types"
+	"ratatoskr/pkg/caps"
+	"ratatoskr/pkg/layers"
+	"ratatoskr/pkg/repos"
+	"ratatoskr/pkg/types"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"

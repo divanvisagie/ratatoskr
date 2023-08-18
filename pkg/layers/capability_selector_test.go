@@ -2,7 +2,7 @@ package layers
 
 import (
 	"log"
-	"ratatoskr/types"
+	"ratatoskr/pkg/types"
 	"testing"
 )
 

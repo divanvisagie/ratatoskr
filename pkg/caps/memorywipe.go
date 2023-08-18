@@ -1,8 +1,8 @@
 package caps
 
 import (
-	"ratatoskr/repos"
-	"ratatoskr/types"
+	"ratatoskr/pkg/repos"
+	"ratatoskr/pkg/types"
 )
 
 type MemoryWipe struct {

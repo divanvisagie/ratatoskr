@@ -2,8 +2,8 @@ package caps
 
 import (
 	"fmt"
-	"ratatoskr/repos"
-	"ratatoskr/types"
+	"ratatoskr/pkg/repos"
+	"ratatoskr/pkg/types"
 	"strings"
 	"time"
 )

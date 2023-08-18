@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"ratatoskr/utils"
+	"ratatoskr/internal/utils"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"

@@ -1,8 +1,8 @@
 package caps
 
 import (
-	client "ratatoskr/client"
-	"ratatoskr/repos"
+	client "ratatoskr/pkg/client"
+	"ratatoskr/pkg/repos"
 	"regexp"
 	"strings"
 

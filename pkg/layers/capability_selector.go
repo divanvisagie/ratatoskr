@@ -1,7 +1,7 @@
 package layers
 
 import (
-	"ratatoskr/types"
+	"ratatoskr/pkg/types"
 )
 
 type CapabilitySelector struct {

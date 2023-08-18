@@ -1,8 +1,8 @@
 package layers
 
 import (
-	"ratatoskr/repos"
-	"ratatoskr/types"
+	"ratatoskr/pkg/repos"
+	"ratatoskr/pkg/types"
 )
 
 type MemoryLayer struct {

@@ -2,7 +2,7 @@ package layers
 
 import (
 	"os"
-	"ratatoskr/types"
+	"ratatoskr/pkg/types"
 	"strings"
 )
 

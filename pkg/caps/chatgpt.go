@@ -1,8 +1,8 @@
 package caps
 
 import (
-	client "ratatoskr/client"
-	"ratatoskr/types"
+	client "ratatoskr/pkg/client"
+	"ratatoskr/pkg/types"
 	"strings"
 
 	openai "github.com/sashabaranov/go-openai"

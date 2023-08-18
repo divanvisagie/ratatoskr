@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
-	"ratatoskr/utils"
+	"ratatoskr/internal/utils"
 
 	openai "github.com/sashabaranov/go-openai"
 )

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"ratatoskr/client"
-	"ratatoskr/types"
+	"ratatoskr/pkg/client"
+	"ratatoskr/pkg/types"
 	"sort"
 	"time"
 

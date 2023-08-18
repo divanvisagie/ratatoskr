@@ -1,6 +1,6 @@
 package layers
 
-import "ratatoskr/types"
+import "ratatoskr/pkg/types"
 
 type Layer interface {
 	PassThrough(*types.RequestMessage) (types.ResponseMessage, error)

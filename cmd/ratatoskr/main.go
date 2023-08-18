@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"os"
-	"ratatoskr/handler"
+	"ratatoskr/pkg/handler"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
