@@ -12,7 +12,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o myapp cmd/myapp/main.go
+RUN go build -o ratatoskr cmd/ratatoskr/main.go
 
 # Use a minimal image for the final container
 FROM gcr.io/distroless/base-debian10
