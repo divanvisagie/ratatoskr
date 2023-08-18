@@ -4,3 +4,7 @@ main:
 
 run:
 	go run cmd/ratatoskr/main.go
+
+
+test:
+	go test -v ./...
