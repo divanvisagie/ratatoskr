@@ -1,0 +1,43 @@
+version: '3.7'
+env_file: .env
+services:
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - 6379:6379
+      - 8001:8001
+    environment:
+      - REDISEARCH_ARGS=CONCURRENT_WRITE_MODE
+    volumes:
+      - redis-db:/var/lib/redis
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6379", "ping"]
+      interval: 2s
+      timeout: 1m30s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  ratatoskr:
+    image: ghcr.io/divanvisagie/ratatoskr:latest
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_ADMIN=${TELEGRAM_ADMIN}
+      - TELEGRAM_USERS=${TELEGRAM_USERS}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=${REDIS_URL}
+    depends_on:
+      - redis
+    restart: always
+
+  watchtower:
+    image: containrrr/watchtower
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  redis-db:
