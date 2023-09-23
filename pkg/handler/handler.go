@@ -3,7 +3,7 @@ package handler
 import (
 	"fmt"
 	"log"
-	"ratatoskr/pkg/caps"
+	caps "ratatoskr/pkg/capabilities"
 	"ratatoskr/pkg/layers"
 	"ratatoskr/pkg/repos"
 	"ratatoskr/pkg/types"
