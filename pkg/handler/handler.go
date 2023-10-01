@@ -40,7 +40,11 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 	if update.Message != nil {
 		if update.Message.Text == "/menu" {
-			sendMenu(h.bot, update.Message.Chat.ID)
+			options := []string{
+				"Clear memory",
+				"Memory dump",
+			}
+			sendFullMenu(h.bot, update.Message.Chat.ID, options)
 			return
 		}
 
@@ -81,8 +85,9 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 }
 
 // Function to send custom keyboard with menu options
-func sendMenu(bot *tgbotapi.BotAPI, chatID int64) {
+func sendFullMenu(bot *tgbotapi.BotAPI, chatID int64, options []string) {
 	msg := tgbotapi.NewMessage(chatID, "Select an option:")
+	
 	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("Clear memory"),

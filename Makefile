@@ -10,6 +10,9 @@ pushpi:
 run:
 	go run cmd/ratatoskr/main.go
 
+run.dev:
+	air
+
 staging.run:
 	docker compose -f docker-compose.staging.yml up
 
