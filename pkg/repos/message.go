@@ -79,6 +79,7 @@ func saveMessageInYaml(message types.StoredMessage) {
 	day := now.Day()
 
 	path := fmt.Sprintf("%s/%d/%d/%d", root, year, month, day)
+	log.Printf("Saving message to %s", path)
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		log.Printf("Failed to create directory: %v", err)
