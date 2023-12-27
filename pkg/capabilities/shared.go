@@ -11,7 +11,7 @@ import (
 
 func getFeatureIsEnabled(feature string) bool {
 	feaureMap := map[string]bool{
-		"notion":  true,
+		"notion": false,
 		"link":    true,
 		"chatGpt": true,
 	}
