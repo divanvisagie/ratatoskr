@@ -38,7 +38,24 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 }
 
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
+	
 	if update.Message != nil {
+		// check if a photo was sent with the message and retreive it
+		if update.Message.Photo != nil {
+			photo := update.Message.Photo
+			photoID := photo[0].FileID
+			photoFile, err := h.bot.GetFile(tgbotapi.FileConfig{FileID: photoID})
+			if err != nil {
+				log.Println(err)
+			}
+			fmt.Printf("Photo file: %+v\n", photoFile)
+			// photoBytes, err := h.bot.GetFileDirectURL(photoFile.FilePath)
+			// if err != nil {
+			// 	log.Println(err)
+			// }
+			
+		}
+
 		if update.Message.Text == "/menu" {
 			options := []string{
 				"Clear memory",

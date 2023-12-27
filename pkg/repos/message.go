@@ -70,7 +70,7 @@ func (m *Message) GetMessages(username string) ([]types.StoredMessage, error) {
 
 // Save the message to a file in the folder structure /data/{year}/{month}/{day}
 // the directory is created if it does not exist
-func saveMessageInYaml(message types.StoredMessage) {
+func saveMessageInYaml(username string, message types.StoredMessage) {
 	root := os.Getenv("ROOT_DIR")
 
 	now := time.Now()
@@ -78,7 +78,7 @@ func saveMessageInYaml(message types.StoredMessage) {
 	month := now.Month()
 	day := now.Day()
 
-	path := fmt.Sprintf("%s/%d/%d/%d", root, year, month, day)
+	path := fmt.Sprintf("%s/%s/%d/%d/%d", root, username, year, month, day)
 	log.Printf("Saving message to %s", path)
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
@@ -86,7 +86,7 @@ func saveMessageInYaml(message types.StoredMessage) {
 		return
 	}
 
-	filename := fmt.Sprintf("%s/messsages.yaml", path)
+	filename := fmt.Sprintf("%s/messages.yaml", path)
 
 	// Read existing data from the file, if it exists
 	var storedMessages []types.MessageOnDisk
@@ -137,7 +137,7 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 		Timestamp: timestamp,
 	}
 
-	saveMessageInYaml(storedMessage)
+	saveMessageInYaml(username, storedMessage)
 
 	// retrieve the existing messages from Redis
 	val, err := m.client.Get(ctx, username).Bytes()
