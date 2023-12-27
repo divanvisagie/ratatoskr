@@ -26,7 +26,9 @@ services:
       - TELEGRAM_USERS=${TELEGRAM_USERS}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - REDIS_URL=${REDIS_URL}
-      - ROOT_DIR=${DATA_ROOT_DIR}
+      - ROOT_DIR=/app/data
+    volumes:
+      - ${DATA_ROOT_DIR}:/app/data
     depends_on:
       - redis
     restart: always
