@@ -2,7 +2,8 @@ APP_NAME=ratatoskr
 BUILD_DIR=bin
 
 main:
-	go build cmd/ratatoskr/main.go
+	OUTPUT_PATH="$(BUILD_DIR)/$(APP_NAME)"
+	go build -o bin/ratatoskr cmd/ratatoskr/main.go
 
 pushpi:
 	ssh heimdallr.local "mkdir -p ~/src/" && rsync -av --progress . heimdallr.local:~/src/$(APP_NAME)

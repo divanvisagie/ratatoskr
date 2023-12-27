@@ -9,10 +9,12 @@ import (
 	"os"
 	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/types"
+	"io/ioutil"
 	"sort"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"gopkg.in/yaml.v3"
 )
 
 type Role string
@@ -66,6 +68,63 @@ func (m *Message) GetMessages(username string) ([]types.StoredMessage, error) {
 	return messages, nil
 }
 
+// Save the message to a file in the folder structure /data/{year}/{month}/{day}
+// the directory is created if it does not exist
+func saveMessageInYaml(message types.StoredMessage) {
+	root := os.Getenv("ROOT_DIR")
+
+	now := time.Now()
+	year := now.Year()
+	month := now.Month()
+	day := now.Day()
+
+	path := fmt.Sprintf("%s/%d/%d/%d", root, year, month, day)
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		log.Printf("Failed to create directory: %v", err)
+		return
+	}
+
+	filename := fmt.Sprintf("%s/messsages.yaml", path)
+
+	// Read existing data from the file, if it exists
+	var storedMessages []types.MessageOnDisk
+	if _, err := os.Stat(filename); err == nil {
+		fileContents, err := ioutil.ReadFile(filename)
+		if err != nil {
+			log.Printf("Failed to read file contents: %v", err)
+			return
+		}
+
+		err = yaml.Unmarshal(fileContents, &storedMessages)
+		if err != nil {
+			log.Printf("Failed to unmarshal yaml: %v", err)
+			return
+		}
+	}
+
+	// Append new message to the array
+	mod := types.MessageOnDisk{
+		Role:    message.Role,
+		Content: message.Message,
+	}
+	storedMessages = append(storedMessages, mod)
+
+	// Convert storedMessage array to yaml
+	yamlBytes, err := yaml.Marshal(storedMessages)
+	if err != nil {
+		log.Printf("Failed to marshal yaml: %v", err)
+		return
+	}
+
+	// Write yaml to file
+	err = ioutil.WriteFile(filename, yamlBytes, 0644)
+	if err != nil {
+		log.Printf("Failed to write yaml to file: %v", err)
+		return
+	}
+}
+
 func (m *Message) SaveMessage(role Role, username string, message string) error {
 	ctx := context.Background()
 	// create a new StoredMessage struct
@@ -76,6 +135,8 @@ func (m *Message) SaveMessage(role Role, username string, message string) error 
 		Message:   message,
 		Timestamp: timestamp,
 	}
+
+	saveMessageInYaml(storedMessage)
 
 	// retrieve the existing messages from Redis
 	val, err := m.client.Get(ctx, username).Bytes()

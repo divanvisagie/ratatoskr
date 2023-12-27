@@ -20,6 +20,11 @@ type StoredMessage struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
+type MessageOnDisk struct {
+	Role	  string `yaml:"role"`
+	Content   string `yaml:"content"`
+}
+
 type Capability interface {
 	Check(req *RequestMessage) float32
 	Execute(req *RequestMessage) (ResponseMessage, error)
