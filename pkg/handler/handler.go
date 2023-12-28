@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"log"
 	caps "ratatoskr/pkg/capabilities"
 	"ratatoskr/pkg/layers"
 	"ratatoskr/pkg/repos"
@@ -21,11 +20,8 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	memRepo := repos.NewMessageRepository()
 
 	caps := []types.Capability{
-		caps.NewTestRedis(memRepo),
 		caps.NewMemoryDump(memRepo),
 		caps.NewMemoryWipe(memRepo),
-		caps.NewNotion(),
-		caps.NewLinkProcessor(memRepo),
 		caps.NewChatGPT(),
 	}
 
@@ -38,23 +34,23 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 }
 
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
-	
+
 	if update.Message != nil {
 		// check if a photo was sent with the message and retreive it
-		if update.Message.Photo != nil {
-			photo := update.Message.Photo
-			photoID := photo[0].FileID
-			photoFile, err := h.bot.GetFile(tgbotapi.FileConfig{FileID: photoID})
-			if err != nil {
-				log.Println(err)
-			}
-			fmt.Printf("Photo file: %+v\n", photoFile)
-			// photoBytes, err := h.bot.GetFileDirectURL(photoFile.FilePath)
-			// if err != nil {
-			// 	log.Println(err)
-			// }
-			
-		}
+		// if update.Message.Photo != nil {
+		// 	photo := update.Message.Photo
+		// 	photoID := photo[0].FileID
+		// 	photoFile, err := h.bot.GetFile(tgbotapi.FileConfig{FileID: photoID})
+		// 	if err != nil {
+		// 		log.Println(err)
+		// 	}
+		// 	fmt.Printf("Photo file: %+v\n", photoFile)
+		// 	// photoBytes, err := h.bot.GetFileDirectURL(photoFile.FilePath)
+		// 	// if err != nil {
+		// 	// 	log.Println(err)
+		// 	// }
+		//
+		// }
 
 		if update.Message.Text == "/menu" {
 			options := []string{
@@ -75,14 +71,17 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 			Message:  update.Message.Text,
 			UserName: update.Message.From.UserName,
 		}
+
+		fmt.Printf("Passing through gateway\n")
 		res, err := h.gatewayLayer.PassThrough(req)
 		if err != nil {
-			log.Println(err)
+			fmt.Println(err)
 			msg := tgbotapi.NewMessage(res.ChatID, "Error while processing message")
 			msg.ReplyToMessageID = update.Message.MessageID
 
 			h.bot.Send(msg)
 		}
+		fmt.Printf("Returning from gateway\n")
 
 		if res.Bytes != nil {
 			now := time.Now()
@@ -104,7 +103,7 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 // Function to send custom keyboard with menu options
 func sendFullMenu(bot *tgbotapi.BotAPI, chatID int64, options []string) {
 	msg := tgbotapi.NewMessage(chatID, "Select an option:")
-	
+
 	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("Clear memory"),

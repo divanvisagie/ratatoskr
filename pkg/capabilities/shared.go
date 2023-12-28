@@ -49,7 +49,7 @@ func containsLink(message string) bool {
 	return r.MatchString(message)
 }
 
-func getContextFromRepo(repo *repos.Message, username string) []openai.ChatCompletionMessage {
+func getContextFromRepo(repo *repos.MessageRepo, username string) []openai.ChatCompletionMessage {
 	context, err := repo.GetMessages(username)
 	if err != nil {
 		//TODO: Handle this error better

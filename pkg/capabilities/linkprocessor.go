@@ -9,10 +9,10 @@ import (
 )
 
 type LinkProcessor struct {
-	repo *repos.Message
+	repo *repos.MessageRepo
 }
 
-func NewLinkProcessor(repo *repos.Message) *LinkProcessor {
+func NewLinkProcessor(repo *repos.MessageRepo) *LinkProcessor {
 	return &LinkProcessor{repo}
 }
 

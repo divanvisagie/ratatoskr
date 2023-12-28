@@ -8,10 +8,10 @@ import (
 )
 
 type MemoryDump struct {
-	repo *repos.Message
+	repo *repos.MessageRepo
 }
 
-func NewMemoryDump(repo *repos.Message) *MemoryDump {
+func NewMemoryDump(repo *repos.MessageRepo) *MemoryDump {
 	return &MemoryDump{repo}
 }
 

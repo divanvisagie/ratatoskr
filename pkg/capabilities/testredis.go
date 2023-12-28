@@ -9,10 +9,10 @@ import (
 )
 
 type TestRedis struct {
-	repo *repos.Message
+	repo *repos.MessageRepo
 }
 
-func NewTestRedis(repo *repos.Message) *TestRedis {
+func NewTestRedis(repo *repos.MessageRepo) *TestRedis {
 	return &TestRedis{
 		repo: repo,
 	}

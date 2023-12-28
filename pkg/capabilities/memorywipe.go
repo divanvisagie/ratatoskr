@@ -6,10 +6,10 @@ import (
 )
 
 type MemoryWipe struct {
-	repo *repos.Message
+	repo *repos.MessageRepo
 }
 
-func NewMemoryWipe(repo *repos.Message) *MemoryWipe {
+func NewMemoryWipe(repo *repos.MessageRepo) *MemoryWipe {
 	return &MemoryWipe{repo}
 }
 

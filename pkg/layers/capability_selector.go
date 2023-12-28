@@ -1,6 +1,7 @@
 package layers
 
 import (
+	"fmt"
 	"ratatoskr/pkg/types"
 )
 
@@ -13,6 +14,7 @@ func NewCapabilitySelector(caps []types.Capability) *CapabilitySelector {
 }
 
 func (c *CapabilitySelector) PassThrough(req *types.RequestMessage) (types.ResponseMessage, error) {
+	fmt.Printf("Capability selector layer: %+v\n", req.Message)
 	bestScore := float32(0)
 	var bestCapability types.Capability
 
@@ -25,5 +27,6 @@ func (c *CapabilitySelector) PassThrough(req *types.RequestMessage) (types.Respo
 			}
 		}
 	}
+	fmt.Printf("Best capability: %+v\n", bestCapability)
 	return bestCapability.Execute(req)
 }
