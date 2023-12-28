@@ -11,8 +11,6 @@ services:
       - ROOT_DIR=/app/data
     volumes:
       - ${DATA_ROOT_DIR}:/app/data
-    depends_on:
-      - redis
     restart: always
 
   watchtower:
