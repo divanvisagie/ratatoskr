@@ -19,7 +19,9 @@ func NewMemoryLayer(repo *repos.MessageRepo, child Layer) *MemoryLayer {
 }
 
 func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMessage, error) {
-	m.repo.SaveMessage(repos.User, req.UserName, req.Message)
+	inputMessage := repos.NewStoredMessage(repos.User, req.Message)
+	m.repo.SaveMessage(req.UserName, *inputMessage)
+
 	fmt.Printf("Saved inout message in memory layer: %v\n", req.Message)
 	history, err := m.repo.GetMessages(req.UserName)
 	if err != nil {
@@ -35,7 +37,8 @@ func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMess
 		return types.ResponseMessage{}, err
 	}
 
-	m.repo.SaveMessage(repos.Assistant, req.UserName, res.Message)
+	outputMessage := repos.NewStoredMessage(repos.Assistant, res.Message)
+	m.repo.SaveMessage(req.UserName, *outputMessage)
 
 	return res, nil
 }

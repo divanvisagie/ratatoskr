@@ -127,17 +127,8 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	return nil
 }
 
-func (m *MessageRepo) SaveMessage(role Role, username string, message string) error {
-	// create a new StoredMessage struct
-	now := time.Now()
-	timestamp := now.UnixMilli()
-	storedMessage := types.StoredMessage{
-		Role:      string(role),
-		Message:   message,
-		Timestamp: timestamp,
-	}
-
-	err := saveMessageInYaml(username, storedMessage)
+func (m *MessageRepo) SaveMessage(username string, message types.StoredMessage) error {
+	err := saveMessageInYaml(username, message) 
 	return err
 }
 
