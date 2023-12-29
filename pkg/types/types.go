@@ -23,6 +23,7 @@ type StoredMessage struct {
 type MessageOnDisk struct {
 	Role	  string `yaml:"role"`
 	Content   string `yaml:"content"`
+	Hash 	string `yaml:"hash"`
 }
 
 type Capability interface {

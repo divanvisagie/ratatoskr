@@ -19,6 +19,11 @@ const (
 	Assistant Role = "assistant"
 )
 
+type EmbeddingOnDisk struct {
+	HashedMessage string
+	Embedding []float32
+}
+
 type MessageRepo struct {
 }
 
@@ -85,12 +90,12 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 		return err
 	}
 
-	filename := fmt.Sprintf("%s/messages.yaml", path)
+	msgFile := fmt.Sprintf("%s/messages.yaml", path)
 
 	// Read existing data from the file, if it exists
 	var storedMessages []types.MessageOnDisk
-	if _, err := os.Stat(filename); err == nil {
-		fileContents, err := ioutil.ReadFile(filename)
+	if _, err := os.Stat(msgFile); err == nil {
+		fileContents, err := ioutil.ReadFile(msgFile)
 		if err != nil {
 			log.Printf("Failed to read file contents: %v", err)
 			return err
@@ -118,7 +123,7 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	}
 
 	// Write yaml to file
-	err = ioutil.WriteFile(filename, yamlBytes, 0644)
+	err = ioutil.WriteFile(msgFile, yamlBytes, 0644)
 	if err != nil {
 		log.Printf("Failed to write yaml to file: %v", err)
 		return err
@@ -145,7 +150,7 @@ type Embedding struct {
 }
 
 func (m *MessageRepo) RememberEmbedded(role Role, username string, message string) {
-	fmt.Println("Asked to remembe embedded but function is not implemented")
+	fmt.Println("Asked to remember embedded but function is not implemented")
 }
 
 func NewStoredMessage(role Role, message string) *types.StoredMessage {
