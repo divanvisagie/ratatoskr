@@ -90,6 +90,13 @@ func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
 	return storedMessages, nil
 }
 
+func getHashOfString (message string) string {
+	hasher := md5.New()
+	io.WriteString(hasher, message)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+	return hash
+}
+
 // Save the message to a file in the folder structure /data/{year}/{month}/{day}
 // the directory is created if it does not exist
 func saveMessageInYaml(username string, message types.StoredMessage) error {
@@ -117,16 +124,11 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 		return err
 	}
 
-	// create md5 hash of the message
-	hasher := md5.New()
-	io.WriteString(hasher, message.Message)
-	hash := fmt.Sprintf("%x", hasher.Sum(nil))
-
 	// Append new message to the array
 	mod := types.MessageOnDisk{
 		Role:    message.Role,
 		Content: message.Message,
-		Hash:    hash,
+		Hash:    getHashOfString(message.Message),
 	}
 	storedMessages = append(storedMessages, mod)
 
