@@ -3,13 +3,15 @@ package repos
 import (
 	"crypto/md5"
 	"fmt"
-	"gopkg.in/yaml.v3"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/types"
 	"time"
-	"io"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Role string
@@ -21,8 +23,8 @@ const (
 )
 
 type EmbeddingOnDisk struct {
-	HashedMessage string
-	Embedding     []float32
+	Hash      string    `yaml:"hash"`
+	Embedding []float32 `yaml:"embedding"`
 }
 
 type MessageRepo struct {
@@ -90,7 +92,25 @@ func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
 	return storedMessages, nil
 }
 
-func getHashOfString (message string) string {
+func readEmbeddingsFromDisk(filePath string) ([]EmbeddingOnDisk, error) {
+	var storedMessages []EmbeddingOnDisk
+	if _, err := os.Stat(filePath); err == nil {
+		fileContents, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			log.Printf("Failed to read file contents: %v", err)
+			return nil, err
+		}
+
+		err = yaml.Unmarshal(fileContents, &storedMessages)
+		if err != nil {
+			log.Printf("Failed to unmarshal yaml: %v", err)
+			return nil, err
+		}
+	}
+	return storedMessages, nil
+}
+
+func getHashOfString(message string) string {
 	hasher := md5.New()
 	io.WriteString(hasher, message)
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
@@ -116,21 +136,35 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	}
 
 	msgFile := fmt.Sprintf("%s/messages.yaml", path)
+	embeddingsFile := fmt.Sprintf("%s/embeddings.yaml", path)
 
-	// Read existing data from the file, if it exists
 	storedMessages, err := readMessagesFromDisk(msgFile)
 	if err != nil {
 		log.Printf("Failed to read messages from disk: %v", err)
 		return err
 	}
 
+	embeddings, err := readEmbeddingsFromDisk(embeddingsFile)
+	if err != nil {
+		log.Printf("Failed to read embeddings from disk: %v", err)
+		return err
+	}
+
 	// Append new message to the array
-	mod := types.MessageOnDisk{
+	newMessage := types.MessageOnDisk{
 		Role:    message.Role,
 		Content: message.Message,
 		Hash:    getHashOfString(message.Message),
 	}
-	storedMessages = append(storedMessages, mod)
+	storedMessages = append(storedMessages, newMessage)
+	
+	//  Create embedding
+	embedding := client.Embed(message.Message)
+	newEmbedding := EmbeddingOnDisk{
+		Hash:      getHashOfString(message.Message),
+		Embedding: embedding,
+	}
+	embeddings = append(embeddings, newEmbedding)
 
 	// Convert storedMessage array to yaml
 	yamlBytes, err := yaml.Marshal(storedMessages)
@@ -143,6 +177,18 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	err = ioutil.WriteFile(msgFile, yamlBytes, 0644)
 	if err != nil {
 		log.Printf("Failed to write yaml to file: %v", err)
+		return err
+	}
+
+
+	eyamlBytes, err := yaml.Marshal(embeddings)
+	if err != nil {
+		log.Printf("Failed to marshal yaml: %v", err)
+		return err
+	}
+	err = ioutil.WriteFile(embeddingsFile, eyamlBytes, 0644)
+	if err !=  nil {
+		log.Printf("Failed to write embeddings to file: %v", err)
 		return err
 	}
 
