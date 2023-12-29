@@ -72,6 +72,25 @@ func (m *MessageRepo) GetMessages(username string) ([]types.StoredMessage, error
 	return storedMessages, nil
 }
 
+
+func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
+	var storedMessages []types.MessageOnDisk
+	if _, err := os.Stat(msgFile); err == nil {
+		fileContents, err := ioutil.ReadFile(msgFile)
+		if err != nil {
+			log.Printf("Failed to read file contents: %v", err)
+			return nil, err
+		}
+
+		err = yaml.Unmarshal(fileContents, &storedMessages)
+		if err != nil {
+			log.Printf("Failed to unmarshal yaml: %v", err)
+			return nil, err
+		}
+	}
+	return storedMessages, nil
+}
+
 // Save the message to a file in the folder structure /data/{year}/{month}/{day}
 // the directory is created if it does not exist
 func saveMessageInYaml(username string, message types.StoredMessage) error {
@@ -93,19 +112,10 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	msgFile := fmt.Sprintf("%s/messages.yaml", path)
 
 	// Read existing data from the file, if it exists
-	var storedMessages []types.MessageOnDisk
-	if _, err := os.Stat(msgFile); err == nil {
-		fileContents, err := ioutil.ReadFile(msgFile)
-		if err != nil {
-			log.Printf("Failed to read file contents: %v", err)
-			return err
-		}
-
-		err = yaml.Unmarshal(fileContents, &storedMessages)
-		if err != nil {
-			log.Printf("Failed to unmarshal yaml: %v", err)
-			return err
-		}
+	storedMessages, err := readMessagesFromDisk(msgFile)
+	if err != nil {
+		log.Printf("Failed to read messages from disk: %v", err)
+		return err
 	}
 
 	// Append new message to the array
