@@ -1,14 +1,15 @@
 package repos
 
 import (
+	"crypto/md5"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"os"
 	"ratatoskr/pkg/types"
 	"time"
-
-	"gopkg.in/yaml.v3"
+	"io"
 )
 
 type Role string
@@ -21,7 +22,7 @@ const (
 
 type EmbeddingOnDisk struct {
 	HashedMessage string
-	Embedding []float32
+	Embedding     []float32
 }
 
 type MessageRepo struct {
@@ -68,10 +69,8 @@ func (m *MessageRepo) GetMessages(username string) ([]types.StoredMessage, error
 		}
 	}
 
-
 	return storedMessages, nil
 }
-
 
 func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
 	var storedMessages []types.MessageOnDisk
@@ -118,10 +117,16 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 		return err
 	}
 
+	// create md5 hash of the message
+	hasher := md5.New()
+	io.WriteString(hasher, message.Message)
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
 	// Append new message to the array
 	mod := types.MessageOnDisk{
 		Role:    message.Role,
 		Content: message.Message,
+		Hash:    hash,
 	}
 	storedMessages = append(storedMessages, mod)
 
@@ -143,7 +148,7 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 }
 
 func (m *MessageRepo) SaveMessage(username string, message types.StoredMessage) error {
-	err := saveMessageInYaml(username, message) 
+	err := saveMessageInYaml(username, message)
 	return err
 }
 
