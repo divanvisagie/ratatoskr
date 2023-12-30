@@ -90,6 +90,27 @@ func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
 			return nil, err
 		}
 	}
+
+	missingHashes := 0
+	for i := 0; i < len(storedMessages); i++ {
+		if storedMessages[i].Hash == "" {
+			missingHashes++
+			storedMessages[i].Hash = getHashOfString(storedMessages[i].Content)	
+		}
+	}
+	
+	//if there were missing hashes we should save the state of the new ones
+	if missingHashes > 0 {
+		yamlBytes, err := yaml.Marshal(storedMessages)
+		if err != nil {
+			return nil, err
+		}
+		err = ioutil.WriteFile(msgFile, yamlBytes, 0644)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return storedMessages, nil
 }
 
@@ -219,6 +240,7 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 		return err, nil
 	}
 
+	// Get list of messages.yaml files and populate diskMsgs
 	diskMsgs := []types.MessageOnDisk{}
 	for _, path := range pathList {
 		messages, err := readMessagesFromDisk(path)
