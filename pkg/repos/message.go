@@ -1,7 +1,7 @@
 package repos
 
 import (
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -110,7 +110,7 @@ func readEmbeddingsFromDisk(filePath string) ([]EmbeddingOnDisk, error) {
 }
 
 func getHashOfString(message string) string {
-	hasher := md5.New()
+	hasher := sha256.New()
 	io.WriteString(hasher, message)
 	hash := fmt.Sprintf("%x", hasher.Sum(nil))
 	return hash
@@ -158,7 +158,8 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	storedMessages = append(storedMessages, newMessage)
 
 	//  Create embedding
-	embedding := client.Embed(message.Message)
+	c := client.NewOpenAIClient()
+	embedding := c.Embed(message.Message)
 	newEmbedding := EmbeddingOnDisk{
 		Hash:      getHashOfString(message.Message),
 		Embedding: embedding,

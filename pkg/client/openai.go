@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
-	"log"
 	"os"
 	"ratatoskr/internal/utils"
+	pu "ratatoskr/pkg/utils"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -15,16 +15,19 @@ type OpenAiClient struct {
 	client       *openai.Client
 	maxTokens    int
 	context      []openai.ChatCompletionMessage
+	logger       *pu.Logger
 }
 
 func NewOpenAIClient() *OpenAiClient {
 	token := os.Getenv("OPENAI_API_KEY")
 	client := openai.NewClient(token)
+	logger := pu.NewLogger("OpenAI Client")
 	return &OpenAiClient{
 		systemPrompt: openai.ChatCompletionMessage{},
 		client:       client,
 		maxTokens:    512, //default
 		context:      []openai.ChatCompletionMessage{},
+		logger:       logger,
 	}
 }
 
@@ -59,14 +62,14 @@ func (c *OpenAiClient) AddUserMessage(message string) *OpenAiClient {
 func (c *OpenAiClient) Complete() string {
 	ts, err := utils.Tokenize(c.systemPrompt.Content)
 	if err != nil {
-		log.Printf("Error while tokenizing system prompt: %v", err)
+		c.logger.Error("Complete, tokenize system prompt", err)
 		return `There was an error while trying to tokenize the system prompt in the OpenAI client module.`
 	}
 
 	ctx, err := utils.ShortenContext(c.context, utils.MODEL_LIMIT-c.maxTokens-len(ts))
 
 	if err != nil {
-		log.Println(err)
+		c.logger.Error("Complete, shorten context", err)
 		return `There was an error while trying to shorten the context in the OpenAI client module.`
 	}
 
@@ -84,7 +87,7 @@ func (c *OpenAiClient) Complete() string {
 	)
 
 	if err != nil {
-		log.Println(err)
+		c.logger.Error("Complete, create chat completion", err)
 	}
 	if len(resp.Choices) == 0 {
 		return "I was unable to summarise this article"
@@ -93,7 +96,7 @@ func (c *OpenAiClient) Complete() string {
 	return resp.Choices[0].Message.Content
 }
 
-func Embed(message string) []float32 {
+func (c *OpenAiClient) Embed(message string) []float32 {
 	token := os.Getenv("OPENAI_API_KEY")
 	client := openai.NewClient(token)
 
@@ -106,7 +109,7 @@ func Embed(message string) []float32 {
 
 	resp, err := client.CreateEmbeddings(context.Background(), req)
 	if err != nil {
-		log.Println(err)
+		c.logger.Error("Embed, create embeddings", err)
 	}
 	return resp.Data[0].Embedding
 }

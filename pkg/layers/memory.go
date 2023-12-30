@@ -45,7 +45,8 @@ func (m *MemoryLayer) getContext(username string, inputMessage string) ([]types.
 
 	err, contextualMessages := m.repo.GetAllMessagesForUser(username)
 	// take the top three embeddings that have cosine similarity
-	msgEmbedding := client.Embed(inputMessage)
+	c := client.NewOpenAIClient()
+	msgEmbedding := c.Embed(inputMessage)
 	for i := range contextualMessages {
 		rank := cosineSimilarity(contextualMessages[i].Embedding, msgEmbedding)
 		m.logger.Info("Calculated rank at %v\n", rank)
