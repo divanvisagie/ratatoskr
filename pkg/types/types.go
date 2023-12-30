@@ -15,15 +15,17 @@ type RequestMessage struct {
 }
 
 type StoredMessage struct {
-	Role      string `json:"role"`
-	Message   string `json:"message"`
-	Timestamp int64  `json:"timestamp"`
+	Role      string    `json:"role"`
+	Message   string    `json:"message"`
+	Timestamp int64     `json:"timestamp"`
+	Embedding []float32 `json:"embedding"`
+	Rank      float32   `json:"rank"`
 }
 
 type MessageOnDisk struct {
-	Role	  string `yaml:"role"`
-	Content   string `yaml:"content"`
-	Hash 	string `yaml:"hash"`
+	Role    string `yaml:"role"`
+	Content string `yaml:"content"`
+	Hash    string `yaml:"hash"`
 }
 
 type Capability interface {

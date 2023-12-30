@@ -2,8 +2,11 @@ package layers
 
 import (
 	"fmt"
+	"math"
+	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/repos"
 	"ratatoskr/pkg/types"
+	"sort"
 )
 
 type MemoryLayer struct {
@@ -18,19 +21,60 @@ func NewMemoryLayer(repo *repos.MessageRepo, child Layer) *MemoryLayer {
 	}
 }
 
-func (m *MemoryLayer) getContext(username string) ([]types.StoredMessage, error) {
+func cosineSimilarity(a, b []float32) float32 {
+	var dotProduct, magnitudeA, magnitudeB float32
+	for i := range a {
+		dotProduct += a[i] * b[i]
+		magnitudeA += a[i] * a[i]
+		magnitudeB += b[i] * b[i]
+	}
+	return dotProduct / float32(math.Sqrt(float64(magnitudeA))*math.Sqrt(float64(magnitudeB)))
+}
+
+func (m *MemoryLayer) getContext(username string, inputMessage string) ([]types.StoredMessage, error) {
+	var history []types.StoredMessage
 	// Get the context in order to feed future prompts
-	history, err := m.repo.GetMessages(username)
+	todaysMessages, err := m.repo.GetMessages(username)
 	if err != nil {
 		fmt.Printf("Error in memory layer when getting messages: %v\n", err)
 		return nil, err
 	}
 
+	err, contextualMessages := m.repo.GetAllMessagesForUser(username)
+	// take the top three embeddings that have cosine similarity
+	msgEmbedding := client.Embed(inputMessage)
+	for i := range contextualMessages {
+		rank := cosineSimilarity(contextualMessages[i].Embedding, msgEmbedding)
+		fmt.Printf("Calculated rank at %v\n", rank)
+		contextualMessages[i].Rank = rank
+	}
+
+	// sort contextualmessages ranked highest to lowest
+	sort.Slice(contextualMessages, func(i, j int) bool {
+		return contextualMessages[i].Rank > contextualMessages[j].Rank
+	})
+
+	for _, msg := range contextualMessages {
+		fmt.Printf("Rank: %v, Message: %v\n", msg.Rank, msg.Message)
+	}
+
+	//append the top messages to the history
+	for i := 0; i < 10; i++ {
+		if i < len(contextualMessages) {
+			history = append(history, contextualMessages[i])
+		}
+	}
+
 	// Select only the latest 10 messages
 	if len(history) > 10 {
-		history = history[len(history)-10:]
+		todaysMessages = todaysMessages[len(todaysMessages)-10:]
+		history = append(history, todaysMessages...)
 	}
-	fmt.Printf("History: %v\n", history)
+
+	for _, ctxMsg := range history {
+		fmt.Printf("Context message: %v: %v\n", ctxMsg.Role, ctxMsg.Message)
+	}
+
 	return history, nil
 }
 
@@ -38,7 +82,7 @@ func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMess
 	inputMessage := repos.NewStoredMessage(repos.User, req.Message)
 	m.repo.SaveMessage(req.UserName, *inputMessage)
 
-	history, err := m.getContext(req.UserName)
+	history, err := m.getContext(req.UserName, req.Message)
 	if err != nil {
 		fmt.Printf("Error in memory layer when getting context: %v\n", err)
 		return types.ResponseMessage{}, err

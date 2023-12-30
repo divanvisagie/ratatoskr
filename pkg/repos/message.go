@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/types"
 	"time"
@@ -157,7 +158,7 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 		Hash:    getHashOfString(message.Message),
 	}
 	storedMessages = append(storedMessages, newMessage)
-	
+
 	//  Create embedding
 	embedding := client.Embed(message.Message)
 	newEmbedding := EmbeddingOnDisk{
@@ -180,19 +181,89 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 		return err
 	}
 
-
 	eyamlBytes, err := yaml.Marshal(embeddings)
 	if err != nil {
 		log.Printf("Failed to marshal yaml: %v", err)
 		return err
 	}
 	err = ioutil.WriteFile(embeddingsFile, eyamlBytes, 0644)
-	if err !=  nil {
+	if err != nil {
 		log.Printf("Failed to write embeddings to file: %v", err)
 		return err
 	}
 
 	return nil
+}
+
+func findInstancesOfInPath(path, filename string) (error, []string) {
+	pathList := []string{}
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if info.Name() == filename {
+			pathList = append(pathList, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return err, nil
+	}
+	return nil, pathList
+}
+
+func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.StoredMessage) {
+	root := os.Getenv("ROOT_DIR")
+	path := fmt.Sprintf("%s/%s", root, username)
+
+	// Search all subdirectories to find paths to all instances of messages.yaml
+	err, pathList := findInstancesOfInPath(path, "messages.yaml")
+	if err != nil {
+		fmt.Println("Failed to find instances of messages.yaml")
+		return err, nil
+	}
+
+	diskMsgs := []types.MessageOnDisk{}
+	for _, path := range pathList {
+		messages, err := readMessagesFromDisk(path)
+		if err != nil {
+			return err, nil
+		}
+		diskMsgs = append(diskMsgs, messages...)
+	}
+
+	// lets get the embeddings now
+	err, embeddingPathList := findInstancesOfInPath(path, "embeddings.yaml")
+	if err != nil {
+		fmt.Println("Failed to find instances of embeddings.yaml")
+		return err, nil
+	}
+
+	// create a hashmap of embeddings and hashes
+	embeddings := make(map[string][]float32)
+	for _, path := range embeddingPathList {
+		embeddingsOnDisk, err := readEmbeddingsFromDisk(path)
+		if err != nil {
+			return err, nil
+		}
+		for _, embedding := range embeddingsOnDisk {
+			embeddings[embedding.Hash] = embedding.Embedding
+		}
+	}
+
+	storedMessages := []types.StoredMessage{}
+	for _, msg := range diskMsgs {
+		// check if embedding exists for this hash
+		if _, ok := embeddings[msg.Hash]; !ok {
+			fmt.Printf("No embedding found for hash %s\n", msg.Hash)
+			continue
+		}
+		ebd := embeddings[msg.Hash]
+		storedMessages = append(storedMessages, types.StoredMessage{
+			Role:      msg.Role,
+			Message:   msg.Content,
+			Embedding: ebd,
+		})
+	}
+	fmt.Printf("Returning %d messages\n", len(storedMessages))
+	return nil, storedMessages
 }
 
 func (m *MessageRepo) SaveMessage(username string, message types.StoredMessage) error {
