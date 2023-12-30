@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,7 +12,10 @@ import (
 	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/types"
 	"ratatoskr/pkg/utils"
+	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Role string
@@ -33,6 +35,13 @@ type EmbeddingInMemory struct {
 	Hash      string
 	Embedding []float32
 	Filename  string
+}
+
+type MessageInMemory struct {
+	Role     string
+	Content  string
+	Hash     string
+	Filename string
 }
 
 type MessageRepo struct {
@@ -235,6 +244,28 @@ func findInstancesOfInPath(path, filename string) (error, []string) {
 	return nil, pathList
 }
 
+func getEmbeddingsMapWithPaths(pathList []string) (map[string]EmbeddingInMemory, error) {
+	embeddings := make(map[string]EmbeddingInMemory)
+	for _, path := range pathList {
+		embeddingsOnDisk, err := readEmbeddingsFromDisk(path)
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < len(embeddingsOnDisk); i++ {
+			embeddings[embeddingsOnDisk[i].Hash] = EmbeddingInMemory{
+				Hash:      embeddingsOnDisk[i].Hash,
+				Embedding: embeddingsOnDisk[i].Embedding,
+				Filename:  path,
+			}
+		}
+	}
+
+	for hash, embedding := range embeddings {
+		fmt.Printf(">> getEmbeddingsMapWithPaths Hash: %s, Filename: %s\n", hash, embedding.Filename)
+	}
+	return embeddings, nil
+}
+
 func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.StoredMessage) {
 	root := os.Getenv("ROOT_DIR")
 	path := fmt.Sprintf("%s/%s", root, username)
@@ -247,13 +278,21 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	}
 
 	// Get list of messages.yaml files and populate diskMsgs
-	diskMsgs := []types.MessageOnDisk{}
+	diskMsgs := []MessageInMemory{}
 	for _, path := range pathList {
 		messages, err := readMessagesFromDisk(path)
 		if err != nil {
 			return err, nil
 		}
-		diskMsgs = append(diskMsgs, messages...)
+		//diskMsgs = append(diskMsgs, messages...)
+		for _, msg := range messages {
+			diskMsgs = append(diskMsgs, MessageInMemory{
+				Role:     msg.Role,
+				Content:  msg.Content,
+				Hash:     msg.Hash,
+				Filename: path,
+			})
+		}
 	}
 
 	// lets get the embeddings now
@@ -264,22 +303,14 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	}
 
 	// create a hashmap of embeddings and hashes
-	embeddings := make(map[string]EmbeddingInMemory)
-	for _, path := range embeddingPathList {
-		embeddingsOnDisk, err := readEmbeddingsFromDisk(path)
-		if err != nil {
-			return err, nil
-		}
-		for _, embedding := range embeddingsOnDisk {
-			embeddings[embedding.Hash] = EmbeddingInMemory{
-				Hash:      embedding.Hash,
-				Embedding: embedding.Embedding,
-				Filename:  path,
-			}
-		}
+	embeddings, err := getEmbeddingsMapWithPaths(embeddingPathList)
+	if err != nil {
+		m.logger.Error("GetAllMessagesForUser, getEmbeddingsMapWithPaths", err)
+		return err, nil
 	}
 
 	// Add embeddings to the stored messages
+	var newEmbeddingsToBeStored = make(map[string][]EmbeddingOnDisk)
 	storedMessages := []types.StoredMessage{}
 	for i := 0; i < len(diskMsgs); i++ {
 		// check if embedding exists for this hash
@@ -287,12 +318,26 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 			m.logger.Info("GetAllMessagesForUser, no embedding found for hash %s\n", diskMsgs[i].Hash)
 			c := client.NewOpenAIClient()
 			embedding := c.Embed(diskMsgs[i].Content)
+			// remove the messages.yaml and replace it with embeddings.json
+			filename := strings.Replace(diskMsgs[i].Filename, "messages.yaml", "embeddings.json", 1)
+			m.logger.Info("GetAllMessagesForUser, setting file path for new embedding to %s\n", filename)
 			embeddings[diskMsgs[i].Hash] = EmbeddingInMemory{
 				Hash:      diskMsgs[i].Hash,
 				Embedding: embedding,
-				Filename:  "",
+				Filename:  filename,
 			}
-			continue
+
+			towrite := EmbeddingOnDisk{
+				Hash:      diskMsgs[i].Hash,
+				Embedding: embedding,
+			}
+
+			// append embeddingondisk
+			if _, ok := newEmbeddingsToBeStored[filename]; !ok {
+				newEmbeddingsToBeStored[filename] = []EmbeddingOnDisk{}
+			}
+			newEmbeddingsToBeStored[filename] = append(newEmbeddingsToBeStored[filename], towrite)
+
 		}
 		ebd := embeddings[diskMsgs[i].Hash]
 		storedMessages = append(storedMessages, types.StoredMessage{
@@ -301,6 +346,29 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 			Embedding: ebd.Embedding,
 		})
 	}
+
+	// write new embeddings
+	for hash, embeddings := range newEmbeddingsToBeStored {
+		m.logger.Info(">> GetAllMessagesForUser, writing new embeddings for hash %s\n", hash)
+		existing, err := readEmbeddingsFromDisk(hash)
+		if err != nil {
+			return err, nil
+		}
+		existing = append(existing, embeddings...)
+
+		// write to file
+		embeddingJsonBytes, err := json.Marshal(embeddings)
+		if err != nil {
+			m.logger.Error("GetAllMessagesForUser, marshal json", err)
+			return err, nil
+		}
+		err = ioutil.WriteFile(hash, embeddingJsonBytes, 0644)
+		if err != nil {
+			m.logger.Error("GetAllMessagesForUser, write file", err)
+			return err, nil
+		}
+	}
+
 	m.logger.Info("Returning %d messages\n", len(storedMessages))
 	return nil, storedMessages
 }
