@@ -12,7 +12,7 @@ import (
 	"ratatoskr/pkg/types"
 	"ratatoskr/pkg/utils"
 	"time"
-
+	"encoding/json"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,8 +25,8 @@ const (
 )
 
 type EmbeddingOnDisk struct {
-	Hash      string    `yaml:"hash"`
-	Embedding []float32 `yaml:"embedding"`
+	Hash      string    `json:"hash"`
+	Embedding []float32 `json:"embedding"`
 }
 
 type MessageRepo struct {
@@ -122,7 +122,7 @@ func readEmbeddingsFromDisk(filePath string) ([]EmbeddingOnDisk, error) {
 			return nil, err
 		}
 
-		err = yaml.Unmarshal(fileContents, &storedMessages)
+		err = json.Unmarshal(fileContents, &storedMessages)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	}
 
 	msgFile := fmt.Sprintf("%s/messages.yaml", path)
-	embeddingsFile := fmt.Sprintf("%s/embeddings.yaml", path)
+	embeddingsFile := fmt.Sprintf("%s/embeddings.json", path)
 
 	storedMessages, err := readMessagesFromDisk(msgFile)
 	if err != nil {
@@ -188,25 +188,25 @@ func saveMessageInYaml(username string, message types.StoredMessage) error {
 	embeddings = append(embeddings, newEmbedding)
 
 	// Convert storedMessage array to yaml
-	yamlBytes, err := yaml.Marshal(storedMessages)
+	messageJsonBytes, err := yaml.Marshal(storedMessages)
 	if err != nil {
 		log.Printf("Failed to marshal yaml: %v", err)
 		return err
 	}
 
 	// Write yaml to file
-	err = ioutil.WriteFile(msgFile, yamlBytes, 0644)
+	err = ioutil.WriteFile(msgFile, messageJsonBytes, 0644)
 	if err != nil {
 		log.Printf("Failed to write yaml to file: %v", err)
 		return err
 	}
 
-	eyamlBytes, err := yaml.Marshal(embeddings)
+	embeddingJsonBytes, err := json.Marshal(embeddings)
 	if err != nil {
-		log.Printf("Failed to marshal yaml: %v", err)
+		log.Printf("Failed to marshal json: %v", err)
 		return err
 	}
-	err = ioutil.WriteFile(embeddingsFile, eyamlBytes, 0644)
+	err = ioutil.WriteFile(embeddingsFile, embeddingJsonBytes, 0644)
 	if err != nil {
 		log.Printf("Failed to write embeddings to file: %v", err)
 		return err
@@ -251,7 +251,7 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	}
 
 	// lets get the embeddings now
-	err, embeddingPathList := findInstancesOfInPath(path, "embeddings.yaml")
+	err, embeddingPathList := findInstancesOfInPath(path, "embeddings.json")
 	if err != nil {
 		m.logger.Error("GetAllMessagesForUser, findInstancesOfInPath", err)
 		return err, nil
