@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/types"
+	"ratatoskr/pkg/utils"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -29,11 +30,12 @@ type EmbeddingOnDisk struct {
 }
 
 type MessageRepo struct {
+	logger *utils.Logger
 }
 
 func NewMessageRepository() *MessageRepo {
-
-	return &MessageRepo{}
+	logger := utils.NewLogger("Message Repository")
+	return &MessageRepo{ logger }
 }
 
 func (m *MessageRepo) GetMessages(username string) ([]types.StoredMessage, error) {
@@ -57,7 +59,7 @@ func (m *MessageRepo) GetMessages(username string) ([]types.StoredMessage, error
 		}
 		err = yaml.Unmarshal(fileContents, &messagesOnDisk)
 		if err != nil {
-			log.Printf("Failed to unmarshal yaml: %v", err)
+			m.logger.Error("GetMessages, unmarshal yaml", err)
 			return nil, err
 		}
 
@@ -80,13 +82,11 @@ func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
 	if _, err := os.Stat(msgFile); err == nil {
 		fileContents, err := ioutil.ReadFile(msgFile)
 		if err != nil {
-			log.Printf("Failed to read file contents: %v", err)
 			return nil, err
 		}
 
 		err = yaml.Unmarshal(fileContents, &storedMessages)
 		if err != nil {
-			log.Printf("Failed to unmarshal yaml: %v", err)
 			return nil, err
 		}
 	}
@@ -98,13 +98,11 @@ func readEmbeddingsFromDisk(filePath string) ([]EmbeddingOnDisk, error) {
 	if _, err := os.Stat(filePath); err == nil {
 		fileContents, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			log.Printf("Failed to read file contents: %v", err)
 			return nil, err
 		}
 
 		err = yaml.Unmarshal(fileContents, &storedMessages)
 		if err != nil {
-			log.Printf("Failed to unmarshal yaml: %v", err)
 			return nil, err
 		}
 	}
@@ -216,7 +214,7 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	// Search all subdirectories to find paths to all instances of messages.yaml
 	err, pathList := findInstancesOfInPath(path, "messages.yaml")
 	if err != nil {
-		fmt.Println("Failed to find instances of messages.yaml")
+		m.logger.Error("GetAllMessagesForUser, findInstancesOfInPath", err)
 		return err, nil
 	}
 
@@ -232,7 +230,7 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	// lets get the embeddings now
 	err, embeddingPathList := findInstancesOfInPath(path, "embeddings.yaml")
 	if err != nil {
-		fmt.Println("Failed to find instances of embeddings.yaml")
+		m.logger.Error("GetAllMessagesForUser, findInstancesOfInPath", err)
 		return err, nil
 	}
 
@@ -252,7 +250,7 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	for _, msg := range diskMsgs {
 		// check if embedding exists for this hash
 		if _, ok := embeddings[msg.Hash]; !ok {
-			fmt.Printf("No embedding found for hash %s\n", msg.Hash)
+			m.logger.Info("GetAllMessagesForUser, no embedding found for hash %s\n", msg.Hash)
 			continue
 		}
 		ebd := embeddings[msg.Hash]
@@ -262,7 +260,7 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 			Embedding: ebd,
 		})
 	}
-	fmt.Printf("Returning %d messages\n", len(storedMessages))
+	m.logger.Info("Returning %d messages\n", len(storedMessages))
 	return nil, storedMessages
 }
 

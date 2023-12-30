@@ -6,6 +6,7 @@ import (
 	"ratatoskr/pkg/layers"
 	"ratatoskr/pkg/repos"
 	"ratatoskr/pkg/types"
+	"ratatoskr/pkg/utils"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -14,6 +15,7 @@ import (
 type Handler struct {
 	bot          *tgbotapi.BotAPI
 	gatewayLayer layers.Layer
+	logger       *utils.Logger
 }
 
 func NewHandler(bot *tgbotapi.BotAPI) *Handler {
@@ -30,7 +32,8 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	memoryLayer := layers.NewMemoryLayer(memRepo, capabilityLayer)
 	securityLayer := layers.NewSecurity(memoryLayer)
 
-	return &Handler{bot: bot, gatewayLayer: securityLayer}
+	logger := utils.NewLogger("Handler")
+	return &Handler{bot: bot, gatewayLayer: securityLayer, logger: logger}
 }
 
 func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
@@ -72,16 +75,16 @@ func (h *Handler) HandleTelegramMessages(update tgbotapi.Update) {
 			UserName: update.Message.From.UserName,
 		}
 
-		fmt.Printf("Passing through gateway\n")
+		h.logger.Info("Passing through gateway")
 		res, err := h.gatewayLayer.PassThrough(req)
 		if err != nil {
-			fmt.Println(err)
+			h.logger.Error("HandleTelegramMessages, gateway layer", err)
 			msg := tgbotapi.NewMessage(res.ChatID, "Error while processing message")
 			msg.ReplyToMessageID = update.Message.MessageID
 
 			h.bot.Send(msg)
 		}
-		fmt.Printf("Returning from gateway\n")
+		h.logger.Info("Returning from gateway")
 
 		if res.Bytes != nil {
 			now := time.Now()

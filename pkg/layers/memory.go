@@ -1,23 +1,26 @@
 package layers
 
 import (
-	"fmt"
 	"math"
 	"ratatoskr/pkg/client"
 	"ratatoskr/pkg/repos"
 	"ratatoskr/pkg/types"
+	"ratatoskr/pkg/utils"
 	"sort"
 )
 
 type MemoryLayer struct {
-	child Layer
-	repo  *repos.MessageRepo
+	child  Layer
+	repo   *repos.MessageRepo
+	logger *utils.Logger
 }
 
 func NewMemoryLayer(repo *repos.MessageRepo, child Layer) *MemoryLayer {
+	logger := utils.NewLogger("Memory Layer")
 	return &MemoryLayer{
 		child,
 		repo,
+		logger,
 	}
 }
 
@@ -36,7 +39,7 @@ func (m *MemoryLayer) getContext(username string, inputMessage string) ([]types.
 	// Get the context in order to feed future prompts
 	todaysMessages, err := m.repo.GetMessages(username)
 	if err != nil {
-		fmt.Printf("Error in memory layer when getting messages: %v\n", err)
+		m.logger.Error("getContext, GetMessages", err)
 		return nil, err
 	}
 
@@ -45,7 +48,7 @@ func (m *MemoryLayer) getContext(username string, inputMessage string) ([]types.
 	msgEmbedding := client.Embed(inputMessage)
 	for i := range contextualMessages {
 		rank := cosineSimilarity(contextualMessages[i].Embedding, msgEmbedding)
-		fmt.Printf("Calculated rank at %v\n", rank)
+		m.logger.Info("Calculated rank at %v\n", rank)
 		contextualMessages[i].Rank = rank
 	}
 
@@ -53,10 +56,6 @@ func (m *MemoryLayer) getContext(username string, inputMessage string) ([]types.
 	sort.Slice(contextualMessages, func(i, j int) bool {
 		return contextualMessages[i].Rank > contextualMessages[j].Rank
 	})
-
-	for _, msg := range contextualMessages {
-		fmt.Printf("Rank: %v, Message: %v\n", msg.Rank, msg.Message)
-	}
 
 	//append the top messages to the history
 	for i := 0; i < 10; i++ {
@@ -72,7 +71,7 @@ func (m *MemoryLayer) getContext(username string, inputMessage string) ([]types.
 	}
 
 	for _, ctxMsg := range history {
-		fmt.Printf("Context message: %v: %v\n", ctxMsg.Role, ctxMsg.Message)
+		m.logger.Info("Context message: %v: %v\n", ctxMsg.Role, ctxMsg.Message)
 	}
 
 	return history, nil
@@ -84,7 +83,7 @@ func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMess
 
 	history, err := m.getContext(req.UserName, req.Message)
 	if err != nil {
-		fmt.Printf("Error in memory layer when getting context: %v\n", err)
+		m.logger.Error("PassThrough, getContext", err)
 		return types.ResponseMessage{}, err
 	}
 	req.Context = history
@@ -92,7 +91,7 @@ func (m *MemoryLayer) PassThrough(req *types.RequestMessage) (types.ResponseMess
 	// Now pass through child layer
 	res, err := m.child.PassThrough(req)
 	if err != nil {
-		fmt.Printf("Error in memory layer when passing through child layer: %v\n", err)
+		m.logger.Error("PassThrough, child layer", err)
 		return types.ResponseMessage{}, err
 	}
 
