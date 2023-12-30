@@ -24,6 +24,7 @@ func NewHandler(bot *tgbotapi.BotAPI) *Handler {
 	caps := []types.Capability{
 		caps.NewMemoryDump(memRepo),
 		caps.NewMemoryWipe(memRepo),
+		caps.NewTest(),
 		caps.NewChatGPT(),
 	}
 

@@ -2,7 +2,9 @@ package repos
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,8 +14,6 @@ import (
 	"ratatoskr/pkg/types"
 	"ratatoskr/pkg/utils"
 	"time"
-	"encoding/json"
-	"gopkg.in/yaml.v3"
 )
 
 type Role string
@@ -29,13 +29,19 @@ type EmbeddingOnDisk struct {
 	Embedding []float32 `json:"embedding"`
 }
 
+type EmbeddingInMemory struct {
+	Hash      string
+	Embedding []float32
+	Filename  string
+}
+
 type MessageRepo struct {
 	logger *utils.Logger
 }
 
 func NewMessageRepository() *MessageRepo {
 	logger := utils.NewLogger("Message Repository")
-	return &MessageRepo{ logger }
+	return &MessageRepo{logger}
 }
 
 func (m *MessageRepo) GetMessages(username string) ([]types.StoredMessage, error) {
@@ -95,10 +101,10 @@ func readMessagesFromDisk(msgFile string) ([]types.MessageOnDisk, error) {
 	for i := 0; i < len(storedMessages); i++ {
 		if storedMessages[i].Hash == "" {
 			missingHashes++
-			storedMessages[i].Hash = getHashOfString(storedMessages[i].Content)	
+			storedMessages[i].Hash = getHashOfString(storedMessages[i].Content)
 		}
 	}
-	
+
 	//if there were missing hashes we should save the state of the new ones
 	if missingHashes > 0 {
 		yamlBytes, err := yaml.Marshal(storedMessages)
@@ -258,29 +264,41 @@ func (m *MessageRepo) GetAllMessagesForUser(username string) (error, []types.Sto
 	}
 
 	// create a hashmap of embeddings and hashes
-	embeddings := make(map[string][]float32)
+	embeddings := make(map[string]EmbeddingInMemory)
 	for _, path := range embeddingPathList {
 		embeddingsOnDisk, err := readEmbeddingsFromDisk(path)
 		if err != nil {
 			return err, nil
 		}
 		for _, embedding := range embeddingsOnDisk {
-			embeddings[embedding.Hash] = embedding.Embedding
+			embeddings[embedding.Hash] = EmbeddingInMemory{
+				Hash:      embedding.Hash,
+				Embedding: embedding.Embedding,
+				Filename:  path,
+			}
 		}
 	}
 
+	// Add embeddings to the stored messages
 	storedMessages := []types.StoredMessage{}
-	for _, msg := range diskMsgs {
+	for i := 0; i < len(diskMsgs); i++ {
 		// check if embedding exists for this hash
-		if _, ok := embeddings[msg.Hash]; !ok {
-			m.logger.Info("GetAllMessagesForUser, no embedding found for hash %s\n", msg.Hash)
+		if _, ok := embeddings[diskMsgs[i].Hash]; !ok {
+			m.logger.Info("GetAllMessagesForUser, no embedding found for hash %s\n", diskMsgs[i].Hash)
+			c := client.NewOpenAIClient()
+			embedding := c.Embed(diskMsgs[i].Content)
+			embeddings[diskMsgs[i].Hash] = EmbeddingInMemory{
+				Hash:      diskMsgs[i].Hash,
+				Embedding: embedding,
+				Filename:  "",
+			}
 			continue
 		}
-		ebd := embeddings[msg.Hash]
+		ebd := embeddings[diskMsgs[i].Hash]
 		storedMessages = append(storedMessages, types.StoredMessage{
-			Role:      msg.Role,
-			Message:   msg.Content,
-			Embedding: ebd,
+			Role:      diskMsgs[i].Role,
+			Message:   diskMsgs[i].Content,
+			Embedding: ebd.Embedding,
 		})
 	}
 	m.logger.Info("Returning %d messages\n", len(storedMessages))
