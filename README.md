@@ -1,144 +1,137 @@
 # Ratatoskr
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/nYYnER?referralCode=JU48xV)
+Ratatoskr is a telegram bot written in Rust with the goal creating a generic AI driven bot architecture using a "design by experiment" philosophy. It was started initially as a rewrite of [Ratatoskr](https://github.com/divanvisagie/Ratatoskr) in Rust.
 
+![Rustatoskr](docs/logo-256.png)
 
-![Ratatoskr logo](./docs/logo-256.png)
+Part of this was simply for research purposes to see the difference between the memory usage of a Go and Rust implementation of the same application. The other part was to see how much of a difference the type system makes in terms of code quality and readability.
 
-
-Ratatoskr is a Telegram bot designed to help you manage your bookmarks by leveraging OpenAI's GPT Models and Notion to keep a journal of your links and provide summaries of their contents. It is named after the squirrel Ratatoskr from Norse mythology, who would run up and down the world tree Yggdrasil to deliver messages between the eagle at the top and the serpent at the bottom.
-
-![Ratataoskr demo gif](./docs/demo.gif)
-
-Instead of just pasting links into the "Saved Messages" chat in Telegram, when you paste a link to Ratatoskr, It will attempt to read it and then Use ChatGPT to summarise it's contents, it will then save the link and the summary to a Notion database. These saves are non-destuctive as Ratatoskr is meant to be used not only as a bookmark manager but an enhancement to keeping daily notes inside of Notion.
-
-## Limitations
-Although it can support multiple users for returning summaries, Ratatoskr is currently only able to save links to notion for the designated Admin user. I designed it to solve a problem for myself and at present do not intend to expand my current instance to be a multi user platform, it is however easy to deploy yourself and due to the way the Telegram API is implemented, can actually be run on your local machine. I have however included a "Deploy to [Railway](https://railway.app?referralCode=JU48xV)" button at the top if the page since that is where I host my instance.
-
-You can learn more about the setup in the [Running Ratatoskr](#running-ratatoskr) section.
-
-
-## Running Ratatoskr
-Ratatoskr runs as a simple go program and currently has no database, all storage is in memory. Therefore you only need to set up a few environment variables and you are good to go. You can easily deploy it in something like 
-### Environment Variables
-| Name | Description |
-| --- | --- | 
-| TELEGRAM_BOT_TOKEN | The token for the telegram bot which you set up with [BotFather](https://t.me/BotFather) |
-| TELEGRAM_ADMIN | Your telegram username |
-| TELEGRAM_USERS | A comma separated list of all the users you want to allow to use this bot |
-| OPENAI_API_KEY | [API token](https://platform.openai.com/account/api-keys) for access to GPT 3.5 Turbo |
-| ROOT_DIR | The root directory for all data storage 
-
-## Development Setup
-Regular go programming environment, no funny business.
-
-Install modules
-```sh
-go mod download
-```
-
-Run the program 
-```sh
-go run main.go
-```
-
-
-**For developing with hot reload Run**
-```sh
-go install github.com/cosmtrek/air@latest
-```
-
-```sh
-air
-```
-
-
+Writing in Rust also enables the _potential_ make use of the advances in local AI that have been made that make use of native integration such as local tokenization which seem to only be very good in python and rust at the moment.
 
 ## Architecture
-The architecture is constructed by two main concepts, layers and capabilities. Layers are responsible for intercepting RequestMessages and processing them in some way. For example the MemoryLayer will store the messages that pass through it but also enrich RequestMessages with a context for the conversation history for that user.
 
-Capabilities are responsible for executing a specific task, they also contain a `Check` function that determines if the capability should be executed for a given RequestMessage. For example the LinkProcessorCapability will check if the RequestMessage contains a link and if so it will process it. 
+### High level
+
+Messages from Telegram are converted to a `RequestMessages` and passed to a handler. The handler then passes the message through a series of layers that can either reject the message entirely or modify it and pass it to the next layer. The final layer is a capability selector, which selects the capability that should handle the message. The capability is then executed and a `ResponseMessage` is passed back through the layers and back to the handler which then sends the response back to our main Telegram listener.
+
+The listener then converts the `ResponseMessage` to a the type of response that makes most sense given the content of the `ResponseMessage`. For example if the `ResponseMessage` contains a `text` field, the listener will send a text message back to the user. If the `ResponseMessage` contains a list of options, the listener will send back a message that will cause Telagram keyboard options to be displayed to the user.
 
 ```mermaid
+graph LR
+M[Main] -- RequestMessage --> H[Handler]
+H --> L["Layers(n)"]
+L --> CSL[Capability Selector]
 
-graph
-    subgraph Ratatoskr
-        subgraph Telegram Bot
-            H[Handler]
-        end
-        subgraph Layers
-            SL[Security]
-            ML[Memory]
-            CS[CapabilitySelector]
-        end
-        subgraph Capabilities
-            G[GPT]
-            C[LinkProcessor]
-            N[Notion]
-        end
-        H --> SL
-        SL --> ML
-        ML --> CS
-        CS --> G
-        CS --> C
-        CS --> N
-    end
+CSL -- "check()"--> C[Capability]
 
+CSL -- "check()" --> C2[Selected Capability]
+C2 -->CSL
+
+CSL -- "check()" --> C3[Capability]
+
+CSL -- "execute()" --> C2
+
+CSL --> L
+L --> H
+H -- ResponseMessage --> M
 ```
 
+#### Layers
 
-### User Flow
+By having messages pass through the layers in both directions, layers have the power to check, modify or even save responses from capabilities. This allows for things like security, caching, and logging.
 
-The flow below shows the flow of a message from the user to the telegram bot and then through the layers and capabilities. The flow is slightly different depending on if the message is a question or a link. Non authorised users will be rejected at the SecurityLayer and will not be able to proceed.
+#### Capabilities
 
+Capabilities are the parts of the application that respond to the user. They provide an interface that allows them to implement a check function that returns a score for how well they can handle a message and an execute function that returns a response message. This allows for multiple capabilities to be registered and for the best one to be selected for each message.
+
+Allowing the capabilites to calculate their own score allows for simple capabilities
+that, for example do an exact match on a command, to be registered alongside more complex capabilities that use machine learning to determine if they can handle a message.
+
+```rust
+pub trait Capability {
+    async fn check(&mut self, message: &RequestMessage) -> f32;
+    async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage;
+}
+```
+
+### Specific implementation
+
+While the high level architecture can be applied anywhere, the specific implementation in Rustatoskr makes use of a specific strategy involving an `EmbeddingLayer`.
+
+#### EmbeddingLayer
+
+The `EmbeddingLayer` is a layer that converts the message to a text embedding and attaches this embedding to the `RequestMessage`. This allows capabilities to make use of embeddings to to calculate a `check()` score using [cosine similarity](https://en.wikipedia.org/wiki/Cosine_similarity)(A, B) = (A ⋅ B) / (||A|| ||B||) .
+
+```mermaid
+graph LR
+EL[Embedding Layer] -- Get message embedding--> EE[Embedding Engine]
+
+CS{Capability Selector} -- "check()" --> C[Embeddings based Capability]
+C -- Check Cosine Similarity --> C
+
+
+CS -- "check()" --> C3[Simple Capability]
+
+C -- Get capability embedding --> EE
+C3 -- Simple check --> C3
+
+EL --> CS
+```
+
+#### Memory Layer
+
+The `Memory Layer` in Rustatoskr currently only saves the last 15 messages so acts as a short term memory, when it receives a message from a user it attaches the last 15 messages to the `RequestMessage` so that capabilities can make use of this information.
+
+The core capability using this currently is the ChatCapability which uses this context to build up a list of messages to add to the request to give the user a more natural conversation experience.
+
+When the `ResponseMessage` comes back through the layers, the `MemoryLayer` saves the user message and the assistant message to the memory.
+
+#### Interesting unexpected behaviour
+
+In [one notable instance](https://github.com/divanvisagie/Rustatoskr/issues/1#issue-1718132154) the fact that the incorrect capability was chosen for a message was able to be corrected by the user, since capability selection is only done on the current message, subsequent correction message was seen by the `ChatCapability` which was then able to correct the mistake because it had access to the previous messages.
 
 ```mermaid
 sequenceDiagram
+actor U as User
+participant CS as Capability Selector
+participant CC as Chat Capability
+participant DC as Debug Capability
 
-    actor U as user
-    participant TB as Telegram Bot
+U ->> CS: Are unix pipes part of posix
+CS ->> DC: select
+DC->> U: I've sent you some debug options, you should see the buttons below.
+U ->> CS: I actually wanted the question answered
+CS ->> CC: select
+CC ->> U: ... Yes, Unix pipes are part of POSIX. ...
 
-    participant H as Handler
-    box Layers
-    participant SL as Security(Layer)
-    participant ML as Memory(Layer)
-    participant CS as CapabilitySelector(Layer)
-    end
-
-    box Capabilities
-    participant G as GPT(Capability)
-    participant C as LinkProcessor(Capability)
-    end
-
-    U->>TB: User sends message
-    TB->>H: Handle message
-    H->>H: Convert to RequestMessage
-
-    H->>SL: Forward RequestMessage
-    alt is allowed
-    SL->>ML: Forward RequestMessage
-    else is not allowed
-    SL-->>H: Returns Rejection message
-    end
-    H-->>TB: Returns Rejection message
-    TB-->>U: Returns Rejection message
-    ML->>CS: Forward RequestMessage
-
-    loop Every Capability
-    CS->>G: Run Check RequestMessage
-    G-->>CS: Returns Response
-    end
-
-    alt Is a question
-    CS->>G: Execute RequestMessage
-    else Is a link
-    CS->>C: Execute RequestMessage
-    end
-
-    CS-->>ML: Returns Response
-    ML-->>H: Returns Response
-    H-->>TB: Returns Response
-    TB->>U: Returns Response
 ```
 
+#### Embedding Engine
 
+Currently Rustatoskr uses OpenAI's embeddings API with the `text-embedding-ada-002` model. Future plans inclide testing out local embeddings to see if this reduces overall cost or latency.
+
+## Dev Setup
+
+### Continous dev:
+
+```sh
+cargo install cargo-watch
+```
+
+#### Windows
+
+```powershell
+$env:RUST_LOG="trace"; cargo watch -c -x run
+```
+
+#### Linux
+
+```sh
+RUST_LOG=trace cargo watch -c -x run
+```
+
+## Todo
+
+- [x] Move message embeddings to be a one off by creating an embedding layer
+- [ ] Create description embeddings on registration of a new capability, possibly long term hashed for even fewer calls to the api
+- [ ] Try find a way to do embeddings locally that doesn't crash async

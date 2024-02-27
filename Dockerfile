@@ -1,27 +1,26 @@
-# Use the official Go image as the base image
-FROM golang:1.18 as builder
+# Build in special rust container
+FROM rust:latest as build
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the go.mod and go.sum files and download dependencies
-COPY go.mod go.sum ./
-RUN go mod download
+COPY Cargo.toml ./
+COPY Cargo.lock ./
+COPY src ./src
 
-# Copy the entire project
-COPY . .
+RUN cargo build --release
 
-# Build the application
-RUN go build -o ratatoskr cmd/ratatoskr/main.go
 
-# Use a minimal image for the final container
-FROM gcr.io/distroless/base-debian10
+# Transfer to debian container for production
+FROM rust:latest
 
-# Copy the built application from the builder stage
-COPY --from=builder /app/ratatoskr /ratatoskr
+WORKDIR /app
 
-# Expose the port your app runs on
-EXPOSE 8080
+ENV TELOXIDE_TOKEN ""
+ENV REDIS_URL ""
+ENV OPENAI_API_KEY ""
 
-# Command to run the application
-CMD ["/ratatoskr"]
+COPY --from=build /app/target/release/ .
+RUN chmod +x ./ratatoskr
+# Set the entrypoint command for the container
+RUN ls
+CMD ["./ratatoskr"]

@@ -1,0 +1,10 @@
+version: "3"
+services:
+  ratatoskr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - TELOXIDE_TOKEN=${TELOXIDE_TOKEN}
+      - REDIS_URL=${REDIS_URL}
+      - PORT=8080

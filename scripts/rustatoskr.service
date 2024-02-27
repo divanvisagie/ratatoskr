@@ -1,0 +1,14 @@
+[Unit]
+Description=Ratatoskr Service
+After=network.target
+
+[Service]
+EnvironmentFile=/home/divanvisagie/src/ratatoskr/.env
+ExecStart=/home/divanvisagie/src/ratatoskr/target/release/ratatoskr
+WorkingDirectory=/home/divanvisagie/src/ratatoskr/target/release/
+Restart=always
+User=divanvisagie
+Group=divanvisagie
+
+[Install]
+WantedBy=multi-user.target
