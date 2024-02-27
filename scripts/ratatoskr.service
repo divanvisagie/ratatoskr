@@ -1,6 +1,6 @@
 [Unit]
 Description=Ratatoskr Service
-After=network.target
+After=network.target network-online.target muninn.service
 
 [Service]
 EnvironmentFile=/home/divanvisagie/src/ratatoskr/.env
