@@ -1,11 +1,12 @@
-use std::vec;
+use std::{error::Error, vec};
 
 use async_trait::async_trait;
 use regex::Regex;
 
-use crate::{message_types::ResponseMessage, RequestMessage};
+use crate::{message_types::ResponseMessage, RequestMessage, clients::{self, chatgpt::{Role, GptClient}}};
 
 use super::Capability;
+use scraper::{Html, Selector};
 
 pub struct SummaryCapability {}
 
@@ -24,7 +25,22 @@ impl Capability for SummaryCapability {
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
-        let summary = format!("Summary of {} goes here", message.text);
+        let article_text = fetch_and_summarize(&message.text)
+            .await
+            .unwrap_or_else(|_| "No summary available".to_string());
+
+        let mut gpt_client = GptClient::new();
+        let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
+        gpt_client.add_message(Role::System, prompt.to_string());
+        gpt_client.add_message(Role::User, article_text.clone());
+        let summary = gpt_client.complete().await;
+
+        // shorten article text to just under what telegram bots can handle
+        // let article_text = if article_text.len() > 4000 {
+        //     &article_text[..4000]
+        // } else {
+        //     &article_text
+        // };
 
         let options = vec!["Save".to_string(), "Discuss".to_string()];
 
@@ -36,6 +52,28 @@ impl SummaryCapability {
     pub fn new() -> Self {
         SummaryCapability {}
     }
+}
+
+async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
+    let html = reqwest::get(url).await.unwrap().text().await.unwrap();
+    let document = Html::parse_document(&html);
+
+    // Attempt to find the main article content
+    let article_selector = Selector::parse("article, .article, .post, .content").unwrap();
+    let mut article_texts = Vec::new();
+
+    for element in document.select(&article_selector) {
+        article_texts.push(element.text().collect::<Vec<_>>().join(" "));
+    }
+
+    let summary = article_texts.join(" ");
+
+    // If no article content was found, you might fallback to another strategy or return an error
+    if summary.is_empty() {
+        return Err(());
+    }
+
+    Ok(summary)
 }
 
 #[cfg(test)]
