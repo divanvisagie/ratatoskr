@@ -1,9 +1,13 @@
-use std::{error::Error, vec};
+use std::vec;
 
 use async_trait::async_trait;
 use regex::Regex;
 
-use crate::{message_types::ResponseMessage, RequestMessage, clients::{self, chatgpt::{Role, GptClient}}};
+use crate::{
+    clients::chatgpt::{GptClient, Role},
+    message_types::ResponseMessage,
+    RequestMessage,
+};
 
 use super::Capability;
 use scraper::{Html, Selector};

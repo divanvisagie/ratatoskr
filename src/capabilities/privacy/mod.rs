@@ -27,14 +27,11 @@ impl PrivacyCapability {
 #[async_trait]
 impl Capability for PrivacyCapability {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
-        let cl = EmbeddingsClient::new();
-
-        let description_embedding = cl.get_embeddings(self.description.clone()).await.unwrap();
-
-        cosine_similarity(
-            message.embedding.as_slice(),
-            description_embedding.as_slice(),
-        )
+        if message.text.to_lowercase().starts_with("/privacy") {
+            1.0
+        } else {
+            0.0
+        }
     }
 
     async fn execute(&mut self, _message: &RequestMessage) -> ResponseMessage {
