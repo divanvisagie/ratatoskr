@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, info};
 
 use async_trait::async_trait;
 
@@ -44,6 +44,7 @@ impl Layer for MemoryLayer {
             }
         };
 
+        info!("Printing context as obtained from muninn\n");
         // Convert context to stored messages
         let mut stored_context: Vec<StoredMessage> = Vec::new();
         for chat_response in context {
@@ -56,6 +57,7 @@ impl Layer for MemoryLayer {
                     _ => Role::System,
                 },
             });
+            info!("Stored message: {:?}", stored_context.last());
         }
 
         message.context = stored_context;

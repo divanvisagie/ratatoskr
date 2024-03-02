@@ -3,10 +3,12 @@ use crate::capabilities::chat::ChatCapability;
 use crate::capabilities::debug::DebugCapability;
 use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
+use crate::capabilities::test::TestCapability;
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
 use async_trait::async_trait;
 use tracing::info;
+
 pub struct SelectorLayer {
     capabilities: Vec<Box<dyn Capability>>,
 }
@@ -43,6 +45,7 @@ impl SelectorLayer {
                 Box::new(PrivacyCapability::new()),
                 Box::new(ChatCapability::new()),
                 Box::new(SummaryCapability::new()),
+                Box::new(TestCapability::new())
             ],
         }
     }
