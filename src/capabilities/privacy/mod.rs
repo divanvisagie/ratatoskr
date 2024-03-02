@@ -7,7 +7,6 @@ struct BERTEmbedding {
 }
 
 use crate::{
-    capabilities::cosine_similarity, clients::embeddings::EmbeddingsClient,
     message_types::ResponseMessage, RequestMessage,
 };
 

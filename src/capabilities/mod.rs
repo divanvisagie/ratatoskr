@@ -5,6 +5,7 @@ pub mod chat;
 pub mod debug;
 pub mod privacy;
 pub mod summarize;
+pub mod test;
 
 /// A capability is a feature that the bot can perform. Capabilities are chosen
 /// by a capability selector which expects to be able to call the `check` method
