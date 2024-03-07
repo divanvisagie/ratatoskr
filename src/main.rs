@@ -156,10 +156,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tracing_subscriber::fmt::init();
     info!("Starting bot...");
 
-    let http_server = start_server();
+    // let http_server = start_server();
     let bot = start_bot();
 
-    let _ = join!(http_server, bot);
+    let _ = join!(bot);
 
     Ok(())
 }

@@ -2,6 +2,7 @@ use std::vec;
 
 use async_trait::async_trait;
 use regex::Regex;
+use tracing::info;
 
 use crate::{
     clients::chatgpt::{GptClient, Role},
@@ -31,12 +32,24 @@ impl Capability for SummaryCapability {
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
         let article_text = fetch_and_summarize(&message.text)
             .await
-            .unwrap_or_else(|_| "No summary available".to_string());
+            .unwrap_or_else(|_| "".to_string());
 
-        let mut gpt_client = GptClient::new();
+        info!("article_text: {}", article_text);
+        let mut  gpt_client = GptClient::new();
         let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
         gpt_client.add_message(Role::System, prompt.to_string());
-        gpt_client.add_message(Role::User, article_text.clone());
+        gpt_client.add_message(Role::User, message.text.clone());
+
+        // check if article is empty string or just whitepace
+        if article_text.trim().is_empty() {
+            return ResponseMessage::new("I was unable to read the article".to_string());
+        }
+
+        gpt_client.add_message(
+            Role::System,
+            format!("The system then created the summary:\n {} ", article_text),
+        );
+
         let summary = gpt_client.complete().await;
 
         // shorten article text to just under what telegram bots can handle
@@ -68,6 +81,14 @@ async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
 
     for element in document.select(&article_selector) {
         article_texts.push(element.text().collect::<Vec<_>>().join(" "));
+    }
+
+    // If still empty use meta description
+    if article_texts.is_empty() {
+        let meta_description_selector = Selector::parse("meta[name=description]").unwrap();
+        for element in document.select(&meta_description_selector) {
+            article_texts.push(element.value().attr("content").unwrap().to_string());
+        }
     }
 
     let summary = article_texts.join(" ");
