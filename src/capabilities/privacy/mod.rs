@@ -13,13 +13,13 @@ use crate::{
 use super::Capability;
 
 pub struct PrivacyCapability {
-    description: String,
+    // description: String,
 }
 
 impl PrivacyCapability {
     pub fn new() -> Self {
-        let description = "What is the privacy policy of this service?".to_string();
-        PrivacyCapability { description }
+        // let description = "What is the privacy policy of this service?".to_string();
+        PrivacyCapability { }
     }
 }
 

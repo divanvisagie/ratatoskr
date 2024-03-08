@@ -1,4 +1,3 @@
-#![allow(deprecated)]
 use message_types::RequestMessage;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
@@ -8,12 +7,9 @@ use tracing::{error, info};
 
 use teloxide::prelude::*;
 
-use actix_web::{get, App, HttpResponse, HttpServer, Responder};
-use std::env;
 use teloxide::types::{
     ChatAction, InputFile, KeyboardButton, KeyboardMarkup, ParseMode, ReplyMarkup,
 };
-use tokio::join;
 
 mod capabilities;
 mod clients;
@@ -82,7 +78,7 @@ pub async fn start_bot() {
                     .resize_keyboard(true);
 
                 bot.send_message(msg.chat.id, res.text)
-                    .parse_mode(ParseMode::Markdown)
+                    .parse_mode(ParseMode::MarkdownV2)
                     .reply_markup(ReplyMarkup::Keyboard(keyboard))
                     .await?;
 
@@ -91,7 +87,7 @@ pub async fn start_bot() {
 
             match bot
                 .send_message(msg.chat.id, res.text.clone())
-                .parse_mode(ParseMode::Markdown)
+                .parse_mode(ParseMode::MarkdownV2)
                 .await
             {
                 Ok(_) => (),
@@ -104,28 +100,6 @@ pub async fn start_bot() {
             Ok(())
         }
     })
-    .await;
-}
-
-pub async fn start_server() {
-    let port = match env::var("PORT") {
-        Ok(val) => val,
-        Err(_) => "8001".to_string(),
-    };
-    let port = port.parse::<u16>().expect("PORT must be a number");
-
-    let host = match env::var("HOST") {
-        Ok(val) => val,
-        Err(_) => "127.0.0.1".to_string(),
-    };
-
-    let _h = HttpServer::new(|| {
-        App::new().service(hello)
-        // .route("/hey", web::get().to(manual_hello))
-    })
-    .bind((host, port))
-    .unwrap()
-    .run()
     .await;
 }
 
@@ -146,20 +120,12 @@ pub async fn start_receiver(receiver: Receiver<String>) {
     }
 }
 
-#[get("/health")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("All is good")
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tracing_subscriber::fmt::init();
     info!("Starting bot...");
 
-    // let http_server = start_server();
-    let bot = start_bot();
-
-    let _ = join!(bot);
+    start_bot().await;
 
     Ok(())
 }

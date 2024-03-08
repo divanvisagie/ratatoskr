@@ -11,11 +11,8 @@ tokio = { version = "1.8", features = ["rt-multi-thread", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 reqwest = "0.11.18"
-futures = "0.3.28"
 async-trait = "0.1.68"
-clippy = "0.0.302"
 regex = "1.8.1"
-actix-web = "4.3.1"
 chrono = "0.4.26"
 sha2 = "0.10.8"
 tracing = "0.1"
