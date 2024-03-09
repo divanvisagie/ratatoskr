@@ -1,20 +1,20 @@
 use async_trait::async_trait;
 
 use crate::{
-    clients::embeddings::EmbeddingsClient, message_types::ResponseMessage, RequestMessage,
+    clients::embeddings::{BarnstokkrClient, EmbeddingsClient}, message_types::ResponseMessage, RequestMessage,
 };
 
 use super::Layer;
 
 pub struct EmbeddingLayer {
-    embedding: EmbeddingsClient,
+    embedding: Box<dyn EmbeddingsClient>,
     next: Box<dyn Layer>,
 }
 
 impl EmbeddingLayer {
     pub fn new(next: Box<dyn Layer>) -> Self {
         EmbeddingLayer {
-            embedding: EmbeddingsClient::new(),
+            embedding: Box::new(BarnstokkrClient::new()),
             next,
         }
     }

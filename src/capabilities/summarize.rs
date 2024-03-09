@@ -5,10 +5,11 @@ use regex::Regex;
 use tracing::info;
 
 use crate::{
-    clients::chatgpt::{GptClient, Role},
+    clients::chat::{ChatClient, OllamaClient, Role},
     message_types::ResponseMessage,
     RequestMessage,
 };
+use crate::clients::chat::ContextBuilder;
 
 use super::Capability;
 use scraper::{Html, Selector};
@@ -35,22 +36,23 @@ impl Capability for SummaryCapability {
             .unwrap_or_else(|_| "".to_string());
 
         info!("article_text: {}", article_text);
-        let mut  gpt_client = GptClient::new();
+        let mut  gpt_client = OllamaClient::new();
         let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
-        gpt_client.add_message(Role::System, prompt.to_string());
-        gpt_client.add_message(Role::User, message.text.clone());
+        let mut context = ContextBuilder::new();
+        context.add_message(Role::System, prompt.to_string());
+        context.add_message(Role::User, message.text.clone());
 
         // check if article is empty string or just whitepace
         if article_text.trim().is_empty() {
             return ResponseMessage::new("I was unable to read the article".to_string());
         }
 
-        gpt_client.add_message(
+        context.add_message(
             Role::System,
             format!("The system then created the summary:\n {} ", article_text),
         );
 
-        let summary = gpt_client.complete().await;
+        let summary = gpt_client.complete(context.build()).await;
 
         // shorten article text to just under what telegram bots can handle
         // let article_text = if article_text.len() > 4000 {

@@ -7,7 +7,7 @@ use async_trait::async_trait;
 
 use crate::{
     clients::{
-        chatgpt::Role,
+        chat::Role,
         muninn::{MunninClient, MunninClientImpl},
     },
     message_types::ResponseMessage,

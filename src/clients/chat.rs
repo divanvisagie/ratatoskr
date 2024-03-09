@@ -3,7 +3,7 @@ use std::{env, fmt};
 use reqwest::header;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
-use tracing::error;
+use tracing::{error, info};
 #[derive(Debug, Serialize, Deserialize)]
 struct ChatRequest {
     pub model: String,
@@ -11,9 +11,9 @@ struct ChatRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct Message {
-    role: String,
-    content: String,
+pub struct Message {
+    pub role: String,
+    pub content: String,
 }
 
 impl fmt::Display for Message {
@@ -50,11 +50,6 @@ fn parse_response(json_str: &str) -> Result<ChatResponse> {
     serde_json::from_str(json_str)
 }
 
-#[derive(Debug)]
-pub struct GptClient {
-    messages: Vec<Message>,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Role {
     System,
@@ -72,13 +67,23 @@ impl fmt::Display for Role {
     }
 }
 
-impl GptClient {
+#[async_trait::async_trait]
+pub trait ChatClient: Send + Sync {
+    async fn complete(&mut self, context: Vec<Message>) -> String;
+}
+
+#[allow(dead_code)]
+pub struct ContextBuilder {
+    messages: Vec<Message>,
+}
+
+#[allow(dead_code)]
+impl ContextBuilder {
     pub fn new() -> Self {
-        GptClient {
+        ContextBuilder {
             messages: Vec::new(),
         }
     }
-
     pub fn add_message(&mut self, role: Role, text: String) -> &mut Self {
         self.messages.push(Message {
             role: role.to_string(),
@@ -87,8 +92,76 @@ impl GptClient {
         self
     }
 
+    pub fn build(&self) -> Vec<Message> {
+        self.messages.clone()
+    }
+}
+/// Ollama client implementation
+pub struct OllamaClient;
+#[allow(dead_code)]
+impl OllamaClient {
+    pub fn new() -> Self {
+        OllamaClient {}
+    }
+}
+
+#[derive(Deserialize)]
+struct OllamaResponse {
+    pub message: Message,
+}
+#[derive(Serialize)]
+struct OllamaRequest {
+    pub model: String,
+    pub messages: Vec<Message>,
+    pub stream: bool,
+}
+#[allow(dead_code)]
+#[async_trait::async_trait]
+impl ChatClient for OllamaClient {
+    async fn complete(&mut self, context: Vec<Message>) -> String {
+        let client = reqwest::Client::new();
+        let url = "http://127.0.0.1:11434/api/chat";
+
+        let chat_request = OllamaRequest {
+            // model: "mistral".to_string(),
+            model: "gemma:2b".to_string(),
+            messages: context.clone(),
+            stream: false,
+        };
+
+        let request_body = serde_json::to_string(&chat_request).unwrap();
+
+        let response = client.post(url).body(request_body).send().await;
+
+        let response = match response {
+            Ok(response) => response.text().await,
+            Err(e) => {
+                error!("Error: {}", e);
+                return "Error".to_string();
+            }
+        };
+
+        let response_text = response.unwrap();
+
+        info!("response_text: {}", response_text);
+        let response_object: OllamaResponse = serde_json::from_str(&response_text).unwrap();
+
+        response_object.message.content
+    }
+}
+/// OpenAI client implementation
+pub struct GptClient;
+#[allow(dead_code)]
+impl GptClient {
+    pub fn new() -> Self {
+        GptClient {}
+    }
+}
+#[allow(dead_code)]
+#[async_trait::async_trait]
+impl ChatClient for GptClient {
     //complete method
-    pub async fn complete(&mut self) -> String {
+    async fn complete(&mut self, context: Vec<Message>) -> String {
         // Retrieve the API key from the environment variable
         let api_key =
             env::var("OPENAI_API_KEY").expect("Missing OPENAI_API_KEY environment variable");
@@ -108,7 +181,7 @@ impl GptClient {
 
         let chat_request = ChatRequest {
             model: "gpt-4-turbo-preview".to_string(),
-            messages: self.messages.clone(),
+            messages: context.clone(),
         };
 
         let request_body = serde_json::to_string(&chat_request).unwrap();

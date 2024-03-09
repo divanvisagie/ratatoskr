@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use message_types::RequestMessage;
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
@@ -78,7 +79,7 @@ pub async fn start_bot() {
                     .resize_keyboard(true);
 
                 bot.send_message(msg.chat.id, res.text)
-                    .parse_mode(ParseMode::MarkdownV2)
+                    .parse_mode(ParseMode::Markdown)
                     .reply_markup(ReplyMarkup::Keyboard(keyboard))
                     .await?;
 
@@ -87,7 +88,8 @@ pub async fn start_bot() {
 
             match bot
                 .send_message(msg.chat.id, res.text.clone())
-                .parse_mode(ParseMode::MarkdownV2)
+                .parse_mode(ParseMode::Markdown)
+                .reply_to_message_id(msg.id)
                 .await
             {
                 Ok(_) => (),

@@ -21,3 +21,6 @@ install:
 	# delete the old service file if it exists
 	rm /etc/systemd/system/ratatoskr.service || true
 	cp scripts/ratatoskr.service /etc/systemd/system/
+
+dev:
+	cargo watch -x run
