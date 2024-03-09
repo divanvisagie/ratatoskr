@@ -36,7 +36,7 @@ impl<'a> Capability for ChatCapability<'a> {
 
         builder.add_message(Role::System, self.prompt.to_string());
         // only take the last 5 messages in context
-        let context = message.context.iter().rev().take(5).collect::<Vec<_>>();
+        let context = message.context.iter().rev().take(10).collect::<Vec<_>>();
         context.iter().for_each(|m| {
             builder.add_message(m.role.clone(), m.text.clone());
         });

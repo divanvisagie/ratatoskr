@@ -61,9 +61,15 @@ impl Capability for SummaryCapability {
         //     &article_text
         // };
 
-        let options = vec!["Save".to_string(), "Discuss".to_string()];
+        // let options = vec!["Save".to_string(), "Discuss".to_string()];
+        // let options = None
 
-        ResponseMessage::new_with_options(summary, options)
+        ResponseMessage {
+            bytes: None,
+            options: None,
+            text: summary 
+        }
+    
     }
 }
 

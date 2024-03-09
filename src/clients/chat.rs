@@ -123,8 +123,8 @@ impl ChatClient for OllamaClient {
         let url = "http://127.0.0.1:11434/api/chat";
 
         let chat_request = OllamaRequest {
-            // model: "mistral".to_string(),
-            model: "gemma:2b".to_string(),
+            model: "mistral".to_string(),
+           // model: "gemma:2b".to_string(),
             messages: context.clone(),
             stream: false,
         };
@@ -141,10 +141,23 @@ impl ChatClient for OllamaClient {
             }
         };
 
-        let response_text = response.unwrap();
+        let response_text = match response {
+            Ok(response) => response,
+            Err(e) => {
+                error!("Error: {}", e);
+                return "Error".to_string();
+            }
+        };
 
         info!("response_text: {}", response_text);
-        let response_object: OllamaResponse = serde_json::from_str(&response_text).unwrap();
+        let response_object: Result<OllamaResponse> = serde_json::from_str(&response_text);
+        let response_object = match response_object {
+            Ok(response) => response,
+            Err(e) => {
+                error!("Error: {}", e);
+                return "Error".to_string();
+            }
+        };
 
         response_object.message.content
     }

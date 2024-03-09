@@ -77,15 +77,22 @@ pub async fn start_bot() {
                 let keyboard = KeyboardMarkup::default()
                     .append_row(keyboard_row)
                     .resize_keyboard(true);
-
-                bot.send_message(msg.chat.id, res.text)
-                    .parse_mode(ParseMode::Markdown)
+                
+                info!("responding with keyboard: {:?}", keyboard);
+                info!("responding with text: {:?}", res.text);
+                let r = bot.send_message(msg.chat.id, res.text)
+                    .parse_mode(ParseMode::MarkdownV2)
                     .reply_markup(ReplyMarkup::Keyboard(keyboard))
-                    .await?;
+                    .await;
+                if let Err(e) = r {
+                    error!("Failed to send message: {}", e);
+                }
+                
 
                 return Ok(());
             }
 
+            info!("responding with text: {:?}", res.text);
             match bot
                 .send_message(msg.chat.id, res.text.clone())
                 .parse_mode(ParseMode::Markdown)
