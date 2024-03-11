@@ -1,7 +1,7 @@
 use crate::{
     capabilities::Capability,
     clients::{chat::{ChatClient, ContextBuilder, OllamaClient, Role}, 
-        embeddings::BarnstokkrClient },
+        embeddings::{self, OllamaEmbeddingsClient} },
     message_types::ResponseMessage,
     RequestMessage,
 };
@@ -19,7 +19,7 @@ pub struct ChatCapability<'a> {
 #[async_trait]
 impl<'a> Capability for ChatCapability<'a> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
-        let cl = BarnstokkrClient::new();
+        let cl = OllamaEmbeddingsClient::new();
 
         let description_embedding = cl.get_embeddings(self.description.clone()).await.unwrap();
 
