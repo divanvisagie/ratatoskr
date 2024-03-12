@@ -19,7 +19,7 @@ impl Handler {
         let memory_layer = MemoryLayer::new(Box::new(embedding_layer));
 
         let user_repository = FsUserRepository::new();
-        let security_layer = SecurityLayer::new(Box::new(memory_layer), Box::new(user_repository));
+        let security_layer = SecurityLayer::new(memory_layer, user_repository);
         Self {
             gateway_layer: Box::new(security_layer),
         }

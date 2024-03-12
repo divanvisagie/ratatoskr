@@ -118,6 +118,10 @@ Currently Rustatoskr uses OpenAI's embeddings API with the `text-embedding-ada-0
 cargo install cargo-watch
 ```
 
+### Install ollama and the correct models
+```sh
+ollama pull all-minilm
+```
 #### Windows
 
 ```powershell

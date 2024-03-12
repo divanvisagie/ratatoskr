@@ -5,15 +5,14 @@ use async_trait::async_trait;
 use crate::{message_types::ResponseMessage, repositories::users::UserRepository, RequestMessage};
 
 use super::Layer;
-pub struct SecurityLayer {
-    // fields omitted
-    next: Box<dyn Layer>,
+pub struct SecurityLayer<T: Layer, R: UserRepository> {
+    next: T,
     admin: String,
-    user_repository: Box<dyn UserRepository>,
+    user_repository: R,
 }
 
 #[async_trait]
-impl Layer for SecurityLayer {
+impl <T: Layer, R: UserRepository>Layer for SecurityLayer <T, R>{
     async fn execute(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         let users = self.user_repository.get_usernames().await;
 
@@ -28,8 +27,8 @@ impl Layer for SecurityLayer {
     }
 }
 
-impl SecurityLayer {
-    pub fn new(next: Box<dyn Layer>, repo: Box<dyn UserRepository>) -> Self {
+impl <T: Layer, R: UserRepository>SecurityLayer<T, R> {
+    pub fn new(next: T, repo: R) -> Self {
         let admin =
             env::var("TELEGRAM_ADMIN").expect("Missing TELEGRAM_ADMIN environment variable");
         SecurityLayer {
@@ -41,8 +40,8 @@ impl SecurityLayer {
 
     #[allow(dead_code)]
     pub fn with_admin(
-        next: Box<dyn Layer>,
-        user_repository: Box<dyn UserRepository>,
+        next: T,
+        user_repository: R,
         admin: String,
     ) -> Self {
         SecurityLayer {
@@ -84,8 +83,8 @@ mod tests {
     async fn test_security_layer_not_allowed() {
         let mock_repo = MockRepository {};
         let mut layer = SecurityLayer::with_admin(
-            Box::new(MockLayer {}),
-            Box::new(mock_repo),
+            MockLayer {},
+            mock_repo,
             "valid_user".to_string(),
         );
 
@@ -107,8 +106,8 @@ mod tests {
     async fn test_security_layer_allowed() {
         let mock_repo = MockRepository {};
         let mut layer = SecurityLayer::with_admin(
-            Box::new(MockLayer {}),
-            Box::new(mock_repo),
+            MockLayer {},
+           mock_repo,
             "valid_user".to_string(),
         );
 
