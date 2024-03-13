@@ -123,8 +123,8 @@ impl ChatClient for OllamaClient {
         let url = "http://127.0.0.1:11434/api/chat";
 
         let chat_request = OllamaRequest {
-           // model: "mistral".to_string(),
-            model: "gemma:2b".to_string(),
+            model: "mistral".to_string(),
+            // model: "gemma:2b".to_string(),
             messages: context.clone(),
             stream: false,
         };

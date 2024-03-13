@@ -1,11 +1,8 @@
 use crate::{
-    layers::{
+    clients::embeddings::OllamaEmbeddingsClient, layers::{
         embedding::EmbeddingLayer, memory::MemoryLayer, security::SecurityLayer,
         selector::SelectorLayer, Layer,
-    },
-    message_types::ResponseMessage,
-    repositories::users::FsUserRepository,
-    RequestMessage,
+    }, message_types::ResponseMessage, repositories::users::FsUserRepository, RequestMessage
 };
 
 pub struct Handler {
@@ -14,8 +11,9 @@ pub struct Handler {
 
 impl Handler {
     pub fn new() -> Self {
+        let embedding_client = OllamaEmbeddingsClient::new();
         let selector_layer = SelectorLayer::new();
-        let embedding_layer = EmbeddingLayer::new(selector_layer);
+        let embedding_layer = EmbeddingLayer::new(selector_layer, embedding_client);
         let memory_layer = MemoryLayer::new(embedding_layer);
 
         let user_repository = FsUserRepository::new();
