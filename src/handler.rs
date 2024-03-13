@@ -15,8 +15,8 @@ pub struct Handler {
 impl Handler {
     pub fn new() -> Self {
         let selector_layer = SelectorLayer::new();
-        let embedding_layer = EmbeddingLayer::new(Box::new(selector_layer));
-        let memory_layer = MemoryLayer::new(Box::new(embedding_layer));
+        let embedding_layer = EmbeddingLayer::new(selector_layer);
+        let memory_layer = MemoryLayer::new(embedding_layer);
 
         let user_repository = FsUserRepository::new();
         let security_layer = SecurityLayer::new(memory_layer, user_repository);

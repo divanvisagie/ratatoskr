@@ -23,12 +23,12 @@ pub struct StoredMessage {
     pub role: Role,
 }
 
-pub struct MemoryLayer {
-    next: Box<dyn Layer>,
+pub struct MemoryLayer<T: Layer> {
+    next: T,
 }
 
 #[async_trait]
-impl Layer for MemoryLayer {
+impl<T: Layer> Layer for MemoryLayer<T> {
     async fn execute(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         let munnin_client = MunninClientImpl::new();
 
@@ -85,8 +85,8 @@ impl Layer for MemoryLayer {
     }
 }
 
-impl MemoryLayer {
-    pub fn new(next: Box<dyn Layer>) -> Self {
+impl <T: Layer>MemoryLayer<T> {
+    pub fn new(next:T) -> Self {
         MemoryLayer { next }
     }
 }

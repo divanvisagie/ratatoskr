@@ -8,25 +8,25 @@ use crate::{
 
 use super::Layer;
 
-pub struct EmbeddingLayer {
-    embedding: Box<dyn EmbeddingsClient>,
-    next: Box<dyn Layer>,
+pub struct EmbeddingLayer<E: EmbeddingsClient, L: Layer> {
+    embedding_client: E,
+    next: L,
 }
 
-impl EmbeddingLayer {
-    pub fn new(next: Box<dyn Layer>) -> Self {
+impl <E: EmbeddingsClient, L: Layer>EmbeddingLayer <E, L> {
+    pub fn new(next: L) -> Self {
         EmbeddingLayer {
-            embedding: Box::new(OllamaEmbeddingsClient::new()),
+            embedding_client: OllamaEmbeddingsClient::new(),
             next,
         }
     }
 }
 
 #[async_trait]
-impl Layer for EmbeddingLayer {
+impl <E: EmbeddingsClient, L: Layer>Layer for EmbeddingLayer<E, L> {
     async fn execute(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         let embedding = self
-            .embedding
+            .embedding_client
             .get_embeddings(message.text.clone())
             .await
             .unwrap();
