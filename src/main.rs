@@ -12,8 +12,6 @@ use teloxide::types::{
     ChatAction, InputFile, KeyboardButton, KeyboardMarkup, ParseMode, ReplyMarkup,
 };
 
-use crate::layers::security::SecurityLayer;
-
 mod capabilities;
 mod clients;
 mod handler;

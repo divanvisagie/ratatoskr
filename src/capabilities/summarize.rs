@@ -44,7 +44,6 @@ impl <C: ChatClient>Capability for SummaryCapability<C> {
             .unwrap_or_else(|_| "".to_string());
 
         info!("article_text: {}", article_text);
-        let mut  gpt_client = OllamaClient::new();
         let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
         let mut context = ContextBuilder::new();
         context.add_message(Role::System, prompt.to_string());
@@ -60,7 +59,7 @@ impl <C: ChatClient>Capability for SummaryCapability<C> {
             format!("The system then created the summary:\n {} ", article_text),
         );
 
-        let summary = gpt_client.complete(context.build()).await;
+        let summary = self.client.complete(context.build()).await;
 
         // shorten article text to just under what telegram bots can handle
         // let article_text = if article_text.len() > 4000 {
@@ -114,13 +113,25 @@ async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
 #[cfg(test)]
 mod tests {
 
+    use crate::clients::chat::Message;
+
     use super::*;
+
+    struct MockChatClient {}
+
+    #[async_trait]
+    impl ChatClient for MockChatClient {
+        async fn complete(&mut self, context: Vec<Message>) -> String {
+            "Summary of https://www.google.com goes here".to_string()
+        }
+    }
 
     #[tokio::test]
     async fn test_execute() {
-        let mut summary_capability = SummaryCapability::new();
+        let mock_client = MockChatClient {};
+        let mut summary_capability = SummaryCapability::new(mock_client);
         let message = RequestMessage {
-            text: "https://www.google.com".to_string(),
+            text: "https://divanv.com/post/structured-intelligence/".to_string(),
             username: "test".to_string(),
             context: Vec::new(),
             embedding: Vec::new(),
@@ -131,7 +142,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_when_given_link() {
-        let mut summary_capability = SummaryCapability::new();
+        let mock_client = MockChatClient {};
+        let mut summary_capability = SummaryCapability::new(mock_client);
         let message = RequestMessage {
             text: "https://www.google.com".to_string(),
             username: "test".to_string(),
@@ -144,7 +156,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_when_given_non_link() {
-        let mut summary_capability = SummaryCapability::new();
+        let mock_client = MockChatClient {};
+        let mut summary_capability = SummaryCapability::new(mock_client);
+
         let message = RequestMessage {
             text: "Hello".to_string(),
             username: "test".to_string(),
