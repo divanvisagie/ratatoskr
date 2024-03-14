@@ -1,5 +1,3 @@
-use std::vec;
-
 use async_trait::async_trait;
 use regex::Regex;
 use tracing::info;
@@ -14,15 +12,25 @@ use crate::clients::chat::ContextBuilder;
 use super::Capability;
 use scraper::{Html, Selector};
 
-pub struct SummaryCapability {}
+pub struct SummaryCapability<C: ChatClient> {
+    client: C,
+}
 
 fn is_link(string: &str) -> bool {
     let url_regex = Regex::new(r#"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))"#).unwrap();
     url_regex.is_match(string)
 }
 
+impl <C: ChatClient>SummaryCapability<C> {
+    pub fn new(client: C) -> Self {
+        SummaryCapability {
+            client,
+        }
+    }
+}
+
 #[async_trait]
-impl Capability for SummaryCapability {
+impl <C: ChatClient>Capability for SummaryCapability<C> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
         if is_link(&message.text) {
             return 1.0;
@@ -70,12 +78,6 @@ impl Capability for SummaryCapability {
             text: summary 
         }
     
-    }
-}
-
-impl SummaryCapability {
-    pub fn new() -> Self {
-        SummaryCapability {}
     }
 }
 

@@ -4,6 +4,7 @@ use crate::capabilities::debug::DebugCapability;
 use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
 use crate::capabilities::test::TestCapability;
+use crate::clients::chat::OllamaClient;
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
 use async_trait::async_trait;
@@ -39,12 +40,13 @@ impl Layer for SelectorLayer {
 
 impl SelectorLayer {
     pub fn new() -> Self {
+        let chat_client = OllamaClient::new();
         SelectorLayer {
             capabilities: vec![
                 Box::new(DebugCapability::new()),
                 Box::new(PrivacyCapability::new()),
                 Box::new(ChatCapability::new()),
-                Box::new(SummaryCapability::new()),
+                Box::new(SummaryCapability::new(chat_client)),
                 Box::new(TestCapability::new())
             ],
         }
