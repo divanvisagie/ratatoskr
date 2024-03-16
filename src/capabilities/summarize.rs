@@ -3,7 +3,7 @@ use regex::Regex;
 use tracing::info;
 
 use crate::{
-    clients::chat::{ChatClient, OllamaClient, Role},
+    clients::chat::{ChatClient, Role},
     message_types::ResponseMessage,
     RequestMessage,
 };

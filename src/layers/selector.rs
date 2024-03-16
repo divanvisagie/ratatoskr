@@ -4,7 +4,8 @@ use crate::capabilities::debug::DebugCapability;
 use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
 use crate::capabilities::test::TestCapability;
-use crate::clients::chat::OllamaClient;
+use crate::clients;
+use crate::clients::chat::{GptClient, OllamaClient};
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
 use async_trait::async_trait;
@@ -40,15 +41,32 @@ impl Layer for SelectorLayer {
 
 impl SelectorLayer {
     pub fn new() -> Self {
-        let chat_client = OllamaClient::new();
-        SelectorLayer {
-            capabilities: vec![
-                Box::new(DebugCapability::new()),
-                Box::new(PrivacyCapability::new()),
-                Box::new(ChatCapability::new()),
-                Box::new(SummaryCapability::new(chat_client)),
-                Box::new(TestCapability::new())
-            ],
+        if cfg!(debug_assertions) {
+            info!("Running in debug mode");
+            let chat_client = OllamaClient::new();
+            let embeddings_client = clients::embeddings::OllamaEmbeddingsClient::new();
+            SelectorLayer {
+                capabilities: vec![
+                    Box::new(DebugCapability::new()),
+                    Box::new(PrivacyCapability::new()),
+                    Box::new(ChatCapability::new(chat_client, embeddings_client)),
+                    Box::new(SummaryCapability::new(OllamaClient::new())),
+                    Box::new(TestCapability::new()),
+                ],
+            }
+        } else {
+            info!("Running in production mode");
+            let chat_client = clients::chat::GptClient::new();
+            let embeddings_client = clients::embeddings::BarnstokkrClient::new();
+            SelectorLayer {
+                capabilities: vec![
+                    Box::new(DebugCapability::new()),
+                    Box::new(PrivacyCapability::new()),
+                    Box::new(ChatCapability::new(chat_client, embeddings_client)),
+                    Box::new(SummaryCapability::new(GptClient::new())),
+                    Box::new(TestCapability::new()),
+                ],
+            }
         }
     }
 }
