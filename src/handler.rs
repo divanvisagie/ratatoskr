@@ -34,7 +34,7 @@ impl Handler {
         }
     }
 
-    pub async fn handle_message(mut self, message: &mut RequestMessage) -> ResponseMessage {
+    pub async fn handle_message(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         self.gateway_layer.execute(message).await
     }
 }

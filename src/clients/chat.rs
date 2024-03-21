@@ -124,7 +124,6 @@ impl ChatClient for OllamaClient {
 
         let chat_request = OllamaRequest {
             model: "mistral".to_string(),
-            // model: "gemma:2b".to_string(),
             messages: context.clone(),
             stream: false,
         };

@@ -30,6 +30,9 @@ impl<C: ChatClient> SummaryCapability<C> {
 #[async_trait]
 impl<C: ChatClient> Capability for SummaryCapability<C> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
+        if message.text == "Summarize" {
+            return 1.0;
+        }
         if is_link(&message.text) {
             return 1.0;
         }
@@ -37,27 +40,30 @@ impl<C: ChatClient> Capability for SummaryCapability<C> {
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
-        let article_text = fetch_and_summarize(&message.text)
-            .await
-            .unwrap_or_else(|_| "".to_string());
+        if message.text == "Summarize" {
+            let input_message = message.context.iter().filter(|m| m.role.to_string() == "user").last().unwrap();
+            let article_text = fetch_and_summarize(&input_message.text)
+                .await
+                .unwrap_or_else(|_| "".to_string());
 
-        info!("article_text: {}", article_text);
-        let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
-        let mut context = ContextBuilder::new();
-        context.add_message(Role::System, prompt.to_string());
-        context.add_message(Role::User, message.text.clone());
+            info!("article_text: {}", article_text);
+            let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
+            let mut context = ContextBuilder::new();
+            context.add_message(Role::System, prompt.to_string());
+            context.add_message(Role::User, message.text.clone());
 
-        // check if article is empty string or just whitepace
-        if article_text.trim().is_empty() {
-            return ResponseMessage::new("I was unable to read the article".to_string());
+            // check if article is empty string or just whitepace
+            if article_text.trim().is_empty() {
+                return ResponseMessage::new("I was unable to read the article".to_string());
+            }
+            context.add_message(
+                Role::System,
+                format!("The system then created the summary:\n {} ", article_text),
+            );
+
+            let summary = self.client.complete(context.build()).await;
+            return ResponseMessage::new(summary);
         }
-
-        context.add_message(
-            Role::System,
-            format!("The system then created the summary:\n {} ", article_text),
-        );
-
-        //let summary = self.client.complete(context.build()).await;
         let text = "What would you like todo with this article?".to_string();
 
         // shorten article text to just under what telegram bots can handle
