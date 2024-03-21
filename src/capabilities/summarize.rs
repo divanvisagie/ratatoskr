@@ -2,12 +2,12 @@ use async_trait::async_trait;
 use regex::Regex;
 use tracing::info;
 
+use crate::clients::chat::ContextBuilder;
 use crate::{
     clients::chat::{ChatClient, Role},
     message_types::ResponseMessage,
     RequestMessage,
 };
-use crate::clients::chat::ContextBuilder;
 
 use super::Capability;
 use scraper::{Html, Selector};
@@ -21,16 +21,14 @@ fn is_link(string: &str) -> bool {
     url_regex.is_match(string)
 }
 
-impl <C: ChatClient>SummaryCapability<C> {
+impl<C: ChatClient> SummaryCapability<C> {
     pub fn new(client: C) -> Self {
-        SummaryCapability {
-            client,
-        }
+        SummaryCapability { client }
     }
 }
 
 #[async_trait]
-impl <C: ChatClient>Capability for SummaryCapability<C> {
+impl<C: ChatClient> Capability for SummaryCapability<C> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
         if is_link(&message.text) {
             return 1.0;
@@ -59,7 +57,8 @@ impl <C: ChatClient>Capability for SummaryCapability<C> {
             format!("The system then created the summary:\n {} ", article_text),
         );
 
-        let summary = self.client.complete(context.build()).await;
+        //let summary = self.client.complete(context.build()).await;
+        let text = "What would you like todo with this article?".to_string();
 
         // shorten article text to just under what telegram bots can handle
         // let article_text = if article_text.len() > 4000 {
@@ -68,15 +67,18 @@ impl <C: ChatClient>Capability for SummaryCapability<C> {
         //     &article_text
         // };
 
-        // let options = vec!["Save".to_string(), "Discuss".to_string()];
+        let options = vec![
+            "Save".to_string(),
+            "Summarize".to_string(),
+            "Discuss".to_string(),
+        ];
         // let options = None
 
         ResponseMessage {
             bytes: None,
-            options: None,
-            text: summary 
+            options: Some(options),
+            text,
         }
-    
     }
 }
 
