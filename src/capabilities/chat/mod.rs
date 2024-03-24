@@ -27,14 +27,12 @@ impl<'a, C: ChatClient, E: EmbeddingsClient> Capability for ChatCapability<'a, C
             message.embedding.as_slice(),
             description_embedding.as_slice(),
         )
-        //0.95
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
         let mut builder = ContextBuilder::new();
 
         builder.add_message(Role::System, self.prompt.to_string());
-        // only take the last 5 messages in context
         let context = message.context.iter().collect::<Vec<_>>();
         context.iter().for_each(|m| {
             builder.add_message(m.role.clone(), m.text.clone());

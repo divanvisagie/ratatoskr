@@ -64,7 +64,7 @@ impl<C: ChatClient> Capability for SummaryCapability<C> {
             let summary = self.client.complete(context.build()).await;
             return ResponseMessage::new(summary);
         }
-        let text = "What would you like todo with this article?".to_string();
+        let text = "What would you like to do with this article?".to_string();
 
         // shorten article text to just under what telegram bots can handle
         // let article_text = if article_text.len() > 4000 {
@@ -74,9 +74,8 @@ impl<C: ChatClient> Capability for SummaryCapability<C> {
         // };
 
         let options = vec![
-            "Save".to_string(),
             "Summarize".to_string(),
-            "Discuss".to_string(),
+            "Nothing".to_string(),
         ];
         // let options = None
 
@@ -143,9 +142,10 @@ mod tests {
             username: "test".to_string(),
             context: Vec::new(),
             embedding: Vec::new(),
+            chat_type: crate::message_types::ChatType::Private,
         };
         let response = summary_capability.execute(&message).await.clone();
-        assert_eq!(response.text, "Summary of https://www.google.com goes here");
+        assert_eq!(response.text, "What would you like to do with this article?");
     }
 
     #[tokio::test]
@@ -157,6 +157,7 @@ mod tests {
             username: "test".to_string(),
             context: Vec::new(),
             embedding: Vec::new(),
+            chat_type: crate::message_types::ChatType::Private,
         };
         let score = summary_capability.check(&message).await;
         assert_eq!(score, 1.0);
@@ -172,6 +173,7 @@ mod tests {
             username: "test".to_string(),
             context: Vec::new(),
             embedding: Vec::new(),
+            chat_type: crate::message_types::ChatType::Private,
         };
         let score = summary_capability.check(&message).await;
         assert_eq!(score, 0.0);

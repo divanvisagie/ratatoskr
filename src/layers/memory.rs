@@ -32,7 +32,8 @@ impl<T: Layer> Layer for MemoryLayer<T> {
     async fn execute(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         let munnin_client = MunninClientImpl::new();
 
-        let context = match munnin_client.get_context(message.username.clone()).await {
+        let username = self.get_username_from_messsage(message);
+        let context = match munnin_client.get_context(&username).await {
             Ok(context) => context,
             Err(err) => {
                 error!("Failed to get context: {:?}", err);
@@ -49,7 +50,7 @@ impl<T: Layer> Layer for MemoryLayer<T> {
         let mut stored_context: Vec<StoredMessage> = Vec::new();
         for chat_response in context {
             stored_context.push(StoredMessage {
-                username: message.username.clone(),
+                username: username.clone(),
                 text: chat_response.content,
                 role: match chat_response.role.as_str() {
                     "user" => Role::User,
@@ -65,7 +66,7 @@ impl<T: Layer> Layer for MemoryLayer<T> {
 
         munnin_client
             .save(
-                message.username.to_string().borrow(),
+                username.borrow(),
                 "user".to_string(),
                 message.text.clone(),
             )
@@ -74,7 +75,7 @@ impl<T: Layer> Layer for MemoryLayer<T> {
 
         munnin_client
             .save(
-                message.username.to_string().borrow(),
+                username.borrow(),
                 "assistant".to_string(),
                 res.text.clone(),
             )
@@ -85,8 +86,14 @@ impl<T: Layer> Layer for MemoryLayer<T> {
     }
 }
 
-impl <T: Layer>MemoryLayer<T> {
-    pub fn new(next:T) -> Self {
+impl<T: Layer> MemoryLayer<T> {
+    pub fn new(next: T) -> Self {
         MemoryLayer { next }
+    }
+    fn get_username_from_messsage(&self, message: &RequestMessage) -> String {
+        match message.chat_type {
+            crate::message_types::ChatType::Private => message.username.clone(),
+            crate::message_types::ChatType::Group(_) => "group".to_string(),
+        }
     }
 }

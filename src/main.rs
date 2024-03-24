@@ -5,6 +5,7 @@ use std::sync::mpsc::Receiver;
 use std::thread;
 use std::time::Duration;
 use std::{error::Error, sync::Arc};
+use teloxide::dispatching::dialogue::GetChatId;
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
@@ -31,9 +32,17 @@ trait BotConverter<T> {
 
 impl BotConverter<Message> for TelegramConverter {
     fn bot_type_to_request_message(&self, message: &Message) -> RequestMessage {
+        let chat_type = match message.chat.kind {
+            teloxide::types::ChatKind::Private(_) => message_types::ChatType::Private,
+            teloxide::types::ChatKind::Public(_) => {
+                let title = message.chat.title().unwrap_or_default();
+                message_types::ChatType::Group(title.to_string())
+            }
+        };
         RequestMessage::new(
             message.text().unwrap_or_default().to_string(),
             message.chat.username().unwrap_or_default().to_string(),
+            chat_type,
         )
     }
 }
@@ -49,10 +58,11 @@ async fn message_handler(
     msg: Message,
     handler: Arc<Mutex<handler::Handler>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let t = msg.chat.kind.clone();
     info!(
-        "{} sent the message: {}",
+        "{} sent the message of kind: {:?}",
         msg.chat.username().unwrap_or_default(),
-        msg.text().unwrap_or_default()
+        t
     );
     if let Some(_text) = msg.text() {
         let bc = TelegramConverter::new();
@@ -121,8 +131,8 @@ async fn callback_handler(
     q: CallbackQuery,
     handler: Arc<Mutex<handler::Handler>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    if let Some(version) = q.data {
-        let text = format!("User chose: {version}");
+    if let Some(option) = q.data {
+        let text = format!("User chose: {option}");
         info!("{}", text);
 
         let username = q
@@ -133,7 +143,16 @@ async fn callback_handler(
             .username()
             .unwrap_or_default()
             .to_string();
-        let mut request_message: RequestMessage = RequestMessage::new(version.clone(), username);
+
+        let chat_type = match q.message.clone().unwrap().chat.kind {
+            teloxide::types::ChatKind::Private(_) => message_types::ChatType::Private,
+            teloxide::types::ChatKind::Public(p) => {
+                let title = p.title.unwrap_or_default();
+                message_types::ChatType::Group(title)
+            }
+        };
+        let mut request_message: RequestMessage =
+            RequestMessage::new(option.clone(), username, chat_type);
         let mut handler = handler.lock().await;
         let response = handler.handle_message(&mut request_message).await;
 
@@ -149,7 +168,7 @@ async fn callback_handler(
             bot.edit_message_text_inline(id, response.text).await?;
         }
 
-        info!("You chose: {}", version);
+        info!("You chose: {}", option);
     }
 
     Ok(())

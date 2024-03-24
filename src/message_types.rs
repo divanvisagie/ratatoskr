@@ -1,20 +1,28 @@
 #![allow(dead_code)]
 use crate::layers::memory::StoredMessage;
 
+#[derive(Clone, PartialEq)]
+pub enum ChatType {
+    Private,
+    Group(String),
+}
+
 pub struct RequestMessage {
     pub text: String,
     pub username: String,
     pub context: Vec<StoredMessage>,
     pub embedding: Vec<f32>,
+    pub chat_type: ChatType,
 }
 
 impl RequestMessage {
-    pub fn new(text: String, username: String) -> Self {
+    pub fn new(text: String, username: String, chat_type: ChatType) -> Self {
         RequestMessage {
             text,
             username,
             context: Vec::new(),
             embedding: Vec::new(),
+            chat_type,
         }
     }
 }

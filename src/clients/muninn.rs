@@ -41,7 +41,7 @@ pub trait MunninClient {
         content: String,
     ) -> Result<(), Box<dyn Error>>;
     async fn search(&self, query: String) -> Result<Vec<SearchResponse>, ()>;
-    async fn get_context(&self, username: String) -> Result<Vec<ChatResponse>, ()>;
+    async fn get_context(&self, username: &String) -> Result<Vec<ChatResponse>, ()>;
 }
 
 pub struct MunninClientImpl {
@@ -105,7 +105,7 @@ impl MunninClient for MunninClientImpl {
 
         Ok(())
     }
-    async fn get_context(&self, username: String) -> Result<Vec<ChatResponse>, ()> {
+    async fn get_context(&self, username: &String) -> Result<Vec<ChatResponse>, ()> {
         let url = format!("{}/api/v1/chat/{}/context", self.base_url, username);
         let client = reqwest::Client::new();
 
