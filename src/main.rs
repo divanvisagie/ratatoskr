@@ -154,24 +154,31 @@ async fn callback_handler(
                 message_types::ChatType::Group(title)
             }
         };
-        let mut request_message: RequestMessage =
-            RequestMessage::new(option.clone(), username, chat_type);
-        let mut handler = handler.lock().await;
-        let response = handler.handle_message(&mut request_message).await;
-
         // Tell telegram that we've seen this query, to remove 🕑 icons from the
         // clients. You could also use `answer_callback_query`'s optional
         // parameters to tweak what happens on the client side.
-        bot.answer_callback_query(q.id).await?;
-
-        // Edit text of the message to which the buttons were attached
-        if let Some(Message { id, chat, .. }) = q.message {
-            bot.edit_message_text(chat.id, id, response.text).await?;
-        } else if let Some(id) = q.inline_message_id {
-            bot.edit_message_text_inline(id, response.text).await?;
+        match bot.answer_callback_query(q.id).await {
+            Ok(_) => (),
+            Err(e) => error!("Failed to answer callback query: {}", e),
         }
+        let wait_response_text = format!("You selected {}. Please wait...", option);
 
-        info!("You chose: {}", option);
+        if let Some(Message { id, chat, .. }) = q.message {
+            info!("Editing message: {}", id);
+            match bot.edit_message_text(chat.id, id, wait_response_text).await {
+                Ok(_) => (),
+                Err(e) => error!("Failed to edit message: {}", e),
+            }
+            let mut request_message: RequestMessage =
+                RequestMessage::new(option.clone(), username, chat_type);
+            let mut handler = handler.lock().await;
+            let response = handler.handle_message(&mut request_message).await;
+
+            match bot.send_message(chat.id, &response.text).await {
+                Ok(_) => (),
+                Err(e) => error!("Failed to send message with response: {}", e),
+            }
+        }
     }
 
     Ok(())

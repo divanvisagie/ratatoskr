@@ -23,24 +23,6 @@ impl Layer for SelectorLayer {
             message_types::ChatType::Private => self.execute_private(message).await,
             message_types::ChatType::Group(_) => self.execute_group(message).await,
         }
-        // let mut best: Option<&mut Box<dyn Capability>> = None;
-        // let mut best_score = 0.0;
-        //
-        // for capability in &mut self.private_capabilities {
-        //     let score = capability.check(message).await;
-        //     info!("{} similarity: {}", capability.get_name(), score);
-        //     if score > best_score {
-        //         best_score = score;
-        //         best = Some(capability);
-        //     }
-        // }
-        // match best {
-        //     Some(capability) => {
-        //         info!("Selected capability: {}", capability.get_name());
-        //         capability.execute(message).await
-        //     }
-        //     None => ResponseMessage::new("No capability found".to_string()),
-        // }
     }
 }
 
@@ -58,7 +40,7 @@ impl SelectorLayer {
                     Box::new(SummaryCapability::new(GptClient::new())),
                     Box::new(TestCapability::new()),
                 ],
-                group_capabilities: vec![Box::new(SummaryCapability::new(GptClient::new()))],
+                group_capabilities: vec![Box::new(SummaryCapability::new(OllamaClient::new()))],
             }
         } else {
             info!("Running in production mode");
