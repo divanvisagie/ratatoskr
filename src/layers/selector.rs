@@ -115,7 +115,7 @@ impl SelectorLayer {
                 info!("Selected capability: {}", capability.get_name());
                 capability.execute(message).await
             }
-            None => ResponseMessage::new("No capability found".to_string()),
+            None => ResponseMessage::new("".to_string()),
         }
     }
 }

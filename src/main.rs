@@ -58,21 +58,24 @@ async fn message_handler(
     msg: Message,
     handler: Arc<Mutex<handler::Handler>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let t = msg.chat.kind.clone();
     info!(
         "{} sent the message of kind: {:?}",
         msg.chat.username().unwrap_or_default(),
-        t
+        &msg.chat.kind
     );
     if let Some(_text) = msg.text() {
         let bc = TelegramConverter::new();
-        bot.send_chat_action(msg.chat.id, ChatAction::Typing)
-            .await?;
-
         let mut request_message: RequestMessage = bc.bot_type_to_request_message(&msg);
         let mut handler = handler.lock().await;
 
         let res = handler.handle_message(&mut request_message).await;
+
+        if res.text.is_empty() {
+            return Ok(());
+        }
+
+        bot.send_chat_action(msg.chat.id, ChatAction::Typing)
+            .await?;
 
         if let Some(bytes) = res.bytes {
             bot.send_document(msg.chat.id, InputFile::memory(bytes).file_name(res.text))

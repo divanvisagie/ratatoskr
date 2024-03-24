@@ -30,7 +30,7 @@ impl<C: ChatClient> SummaryCapability<C> {
 #[async_trait]
 impl<C: ChatClient> Capability for SummaryCapability<C> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
-        if message.text == "Summarize" {
+        if message.text == "Summarize" || message.text == "Nothing" {
             return 1.0;
         }
         if is_link(&message.text) {
@@ -40,8 +40,18 @@ impl<C: ChatClient> Capability for SummaryCapability<C> {
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
+        if message.text == "Nothing" {
+            return ResponseMessage::new(
+                "Alright, let me know if you need anything else".to_string(),
+            );
+        }
         if message.text == "Summarize" {
-            let input_message = message.context.iter().filter(|m| m.role.to_string() == "user").last().unwrap();
+            let input_message = message
+                .context
+                .iter()
+                .filter(|m| m.role.to_string() == "user")
+                .last()
+                .unwrap();
             let article_text = fetch_and_summarize(&input_message.text)
                 .await
                 .unwrap_or_else(|_| "".to_string());
@@ -66,18 +76,7 @@ impl<C: ChatClient> Capability for SummaryCapability<C> {
         }
         let text = "What would you like to do with this article?".to_string();
 
-        // shorten article text to just under what telegram bots can handle
-        // let article_text = if article_text.len() > 4000 {
-        //     &article_text[..4000]
-        // } else {
-        //     &article_text
-        // };
-
-        let options = vec![
-            "Summarize".to_string(),
-            "Nothing".to_string(),
-        ];
-        // let options = None
+        let options = vec!["Summarize".to_string(), "Nothing".to_string()];
 
         ResponseMessage {
             bytes: None,
@@ -119,7 +118,6 @@ async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
 
 #[cfg(test)]
 mod tests {
-
     use crate::clients::chat::Message;
 
     use super::*;
@@ -145,7 +143,10 @@ mod tests {
             chat_type: crate::message_types::ChatType::Private,
         };
         let response = summary_capability.execute(&message).await.clone();
-        assert_eq!(response.text, "What would you like to do with this article?");
+        assert_eq!(
+            response.text,
+            "What would you like to do with this article?"
+        );
     }
 
     #[tokio::test]

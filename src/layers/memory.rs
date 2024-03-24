@@ -91,9 +91,9 @@ impl<T: Layer> MemoryLayer<T> {
         MemoryLayer { next }
     }
     fn get_username_from_messsage(&self, message: &RequestMessage) -> String {
-        match message.chat_type {
+        match &message.chat_type {
             crate::message_types::ChatType::Private => message.username.clone(),
-            crate::message_types::ChatType::Group(_) => "group".to_string(),
+            crate::message_types::ChatType::Group(name) => name.clone(),
         }
     }
 }
