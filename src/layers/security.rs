@@ -1,7 +1,7 @@
 use std::env;
 
 use async_trait::async_trait;
-use tracing::error;
+use tracing::{error, info};
 
 use crate::{
     clients::muninn::{MunninClient, MunninClientImpl},
@@ -24,6 +24,8 @@ impl<T: Layer, R: UserRepository> Layer for SecurityLayer<T, R> {
         match message.chat_type.clone() {
             crate::message_types::ChatType::Private => {
                 let users = self.user_repository.get_usernames().await;
+
+                info!("message from chatid: {}", message.chat_id);
 
                 if users.contains(&message.username) || message.username == self.admin {
                     let client = MunninClientImpl::new();

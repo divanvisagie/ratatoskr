@@ -24,7 +24,7 @@ impl RequestMessage {
             context: Vec::new(),
             embedding: Vec::new(),
             chat_type,
-            chat_id: 0
+            chat_id: chatId
         }
     }
 }

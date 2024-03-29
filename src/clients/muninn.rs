@@ -210,7 +210,10 @@ impl MunninClient for MunninClientImpl {
         });
 
         let request_body = match request_body {
-            Ok(body) => body,
+            Ok(body) => {
+              info!("request_body: {}",body);
+              body
+            },
             Err(e) => panic!("Error serializing request body: {}", e),
         };
 

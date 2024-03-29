@@ -58,7 +58,6 @@ impl<T: Layer> Layer for MemoryLayer<T> {
                     _ => Role::System,
                 },
             });
-            info!("Stored message: {:?}", stored_context.last());
         }
 
         message.context = stored_context;

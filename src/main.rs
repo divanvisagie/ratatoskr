@@ -38,11 +38,13 @@ impl BotConverter<Message> for TelegramConverter {
                 message_types::ChatType::Group(title.to_string())
             }
         };
+        let chat_id: i64 = message.chat.id.0;
+        info!(">>> Chat id: {}", chat_id);
         RequestMessage::new(
             message.text().unwrap_or_default().to_string(),
             message.chat.username().unwrap_or_default().to_string(),
             chat_type,
-            message.chat.id.0,
+            chat_id,
         )
     }
 }
@@ -53,9 +55,11 @@ impl TelegramConverter {
     }
 }
 
-async fn typing_loop (bot: &Bot, chat_id: ChatId) {
+async fn typing_loop(bot: &Bot, chat_id: ChatId) {
     loop {
-        bot.send_chat_action(chat_id, ChatAction::Typing).await.unwrap();
+        bot.send_chat_action(chat_id, ChatAction::Typing)
+            .await
+            .unwrap();
         tokio::time::sleep(Duration::from_secs(3)).await;
     }
 }
@@ -65,11 +69,6 @@ async fn message_handler(
     msg: Message,
     handler: Arc<Mutex<handler::Handler>>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    info!(
-        "{} sent the message of kind: {:?}",
-        msg.chat.username().unwrap_or_default(),
-        &msg.chat.kind
-    );
     if let Some(_text) = msg.text() {
         let bc = TelegramConverter::new();
         let mut request_message: RequestMessage = bc.bot_type_to_request_message(&msg);
@@ -184,7 +183,9 @@ async fn callback_handler(
             }
             // convert Telegram ChatId to i64
             let chat_id: i64 = chat.id.0;
-            let mut request_message = RequestMessage::new(option.clone(), username, chat_type, chat_id);
+            info!("Chat id: {}", chat_id);
+            let mut request_message =
+                RequestMessage::new(option.clone(), username, chat_type, chat_id);
             let mut handler = handler.lock().await;
             let response = handler.handle_message(&mut request_message).await;
 
