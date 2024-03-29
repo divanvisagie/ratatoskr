@@ -1,8 +1,14 @@
 use std::env;
 
 use async_trait::async_trait;
+use tracing::error;
 
-use crate::{message_types::ResponseMessage, repositories::users::UserRepository, RequestMessage};
+use crate::{
+    clients::muninn::{MunninClient, MunninClientImpl},
+    message_types::ResponseMessage,
+    repositories::users::UserRepository,
+    RequestMessage,
+};
 
 use super::Layer;
 pub struct SecurityLayer<T: Layer, R: UserRepository> {
@@ -20,6 +26,21 @@ impl<T: Layer, R: UserRepository> Layer for SecurityLayer<T, R> {
                 let users = self.user_repository.get_usernames().await;
 
                 if users.contains(&message.username) || message.username == self.admin {
+                    let client = MunninClientImpl::new();
+                    let result = client
+                        .save_attribute(
+                            &message.username,
+                            "telegram_chat_id".to_string(),
+                            message.chat_id.to_string(),
+                        )
+                        .await;
+                    match result {
+                        Ok(_) => {}
+                        Err(_) => {
+                            error!("Failed to save chat id");
+                            return ResponseMessage::new("Failed to save chat id".to_string());
+                        }
+                    }
                     self.next.execute(message).await
                 } else {
                     return ResponseMessage::new(format!(
@@ -69,7 +90,6 @@ impl<T: Layer, R: UserRepository> SecurityLayer<T, R> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use async_trait::async_trait;
 
@@ -106,6 +126,7 @@ mod tests {
             context: Vec::new(),
             embedding: Vec::new(),
             chat_type: crate::message_types::ChatType::Private,
+            chat_id: 0,
         };
 
         let response = layer.execute(&mut message).await;
@@ -127,6 +148,7 @@ mod tests {
             context: Vec::new(),
             embedding: Vec::new(),
             chat_type: crate::message_types::ChatType::Private,
+            chat_id: 0,
         };
 
         let response = layer.execute(&mut message).await;

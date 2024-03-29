@@ -42,6 +42,7 @@ impl BotConverter<Message> for TelegramConverter {
             message.text().unwrap_or_default().to_string(),
             message.chat.username().unwrap_or_default().to_string(),
             chat_type,
+            message.chat.id.0,
         )
     }
 }
@@ -181,8 +182,9 @@ async fn callback_handler(
                 Ok(_) => (),
                 Err(e) => error!("Failed to edit message: {}", e),
             }
-            let mut request_message: RequestMessage =
-                RequestMessage::new(option.clone(), username, chat_type);
+            // convert Telegram ChatId to i64
+            let chat_id: i64 = chat.id.0;
+            let mut request_message = RequestMessage::new(option.clone(), username, chat_type, chat_id);
             let mut handler = handler.lock().await;
             let response = handler.handle_message(&mut request_message).await;
 

@@ -13,16 +13,18 @@ pub struct RequestMessage {
     pub context: Vec<StoredMessage>,
     pub embedding: Vec<f32>,
     pub chat_type: ChatType,
+    pub chat_id: i64
 }
 
 impl RequestMessage {
-    pub fn new(text: String, username: String, chat_type: ChatType) -> Self {
+    pub fn new(text: String, username: String, chat_type: ChatType, chatId: i64) -> Self {
         RequestMessage {
             text,
             username,
             context: Vec::new(),
             embedding: Vec::new(),
             chat_type,
+            chat_id: 0
         }
     }
 }
