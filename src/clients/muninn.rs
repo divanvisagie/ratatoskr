@@ -32,6 +32,18 @@ pub struct ChatResponse {
     pub hash: String,
 }
 
+#[derive(Deserialize)]
+pub struct AttributeResponse {
+    pub attribute: String,
+    pub value: String,
+}
+
+#[derive(Serialize)]
+pub struct AttributeRequest {
+    pub attribute: String,
+    pub value: String,
+}
+
 #[async_trait]
 pub trait MunninClient {
     async fn save(
@@ -42,6 +54,17 @@ pub trait MunninClient {
     ) -> Result<(), Box<dyn Error>>;
     async fn search(&self, query: String) -> Result<Vec<SearchResponse>, ()>;
     async fn get_context(&self, username: &String) -> Result<Vec<ChatResponse>, ()>;
+    async fn save_attribute(
+        &self,
+        username: &String,
+        attribute: String,
+        value: String,
+    ) -> Result<(), ()>;
+    async fn get_attribute(
+        &self,
+        username: &String,
+        attribute: String,
+    ) -> Result<AttributeResponse, ()>;
 }
 
 pub struct MunninClientImpl {
@@ -170,5 +193,72 @@ impl MunninClient for MunninClientImpl {
         };
         let var_name = Ok(response_body);
         var_name
+    }
+
+    async fn save_attribute(
+        &self,
+        username: &String,
+        attribute: String,
+        value: String,
+    ) -> Result<(), ()> {
+        let url = format!("{}/api/v1/attribute/{}", self.base_url, username);
+        let client = reqwest::Client::new();
+
+        let request_body = serde_json::to_string(&AttributeRequest{
+            attribute,
+            value,
+        });
+
+        let request_body = match request_body {
+            Ok(body) => body,
+            Err(e) => panic!("Error serializing request body: {}", e),
+        };
+
+        let response = client
+            .post(url)
+            .body(request_body)
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
+
+        match response {
+            Ok(_response) => Ok(()),
+            Err(e) => {
+                error!("Failed to send message: {}", e);
+                return Err(())
+            }
+        }
+    }
+
+    async fn get_attribute(
+        &self,
+        username: &String,
+        attribute: String,
+    ) -> Result<AttributeResponse, ()> {
+        let url = format!("{}/api/v1/attribute/{}/{}", self.base_url, username, attribute);
+        let client = reqwest::Client::new();
+
+        let response = client.get(url.clone()).send().await;
+
+        let response = match response {
+            Ok(response) => response,
+            Err(e) => {
+                error!("Failed to parse response to {}: {}", url.clone(), e);
+                return Err(());
+            }
+        };
+
+        info!("Response: {:?}", response);
+
+        let response_body = response.json::<AttributeResponse>().await;
+        let response_body = match response_body {
+            Ok(body) => body,
+            Err(e) => {
+                error!("Failed to parse response: {}", e);
+                return Err(());
+            }
+        };
+
+        Ok(response_body)
     }
 }

@@ -37,7 +37,7 @@ impl SelectorLayer {
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
                     Box::new(ChatCapability::new(chat_client, embeddings_client)),
-                    Box::new(SummaryCapability::new(GptClient::new())),
+                    Box::new(SummaryCapability::new(OllamaClient::new())),
                     Box::new(TestCapability::new()),
                 ],
                 group_capabilities: vec![Box::new(SummaryCapability::new(OllamaClient::new()))],
