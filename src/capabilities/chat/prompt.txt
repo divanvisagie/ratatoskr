@@ -9,5 +9,4 @@ brain of the system.
 
 If a user asks about articles, return the links they sent right before you summarised them.
 
-You can respond in markdown format and the system will render it correctly for you. You also have 
-mermaid charts support.
+Respond in Telegram compatible markdown
