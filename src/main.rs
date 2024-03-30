@@ -210,8 +210,8 @@ async fn callback_handler(
 pub async fn start_bot() {
     let bot = Bot::from_env();
 
-    let h = handler::Handler::new();
-    let ham = Arc::new(Mutex::new(h));
+    let handler = handler::Handler::new();
+    let ham = Arc::new(Mutex::new(handler));
     let handler = dptree::entry()
         .branch(Update::filter_message().endpoint({
             let ham = Arc::clone(&ham);
@@ -228,13 +228,15 @@ pub async fn start_bot() {
             }
         }));
 
+    let bota = bot.clone();
     let bot_task = async {
-        Dispatcher::builder(bot, handler)
+        Dispatcher::builder(bota, handler)
             .enable_ctrlc_handler()
             .build()
             .dispatch()
             .await;
     };
+
     let mqtt_listener = async {
         let mut mqttoptions = MqttOptions::new("ratatoskr", "127.0.0.1", 1883);
         mqttoptions.set_keep_alive(Duration::from_secs(5));
@@ -252,10 +254,10 @@ pub async fn start_bot() {
                         let deserialized: MessageEvent =
                             rmp_serde::from_read_ref(&payload).unwrap();
                         info!("Received publish message from MQTT: {:?}", deserialized);
-                        // bot.send_message(
-                        //     ChatId(deserialized.chat_id),
-                        //     "Received message from MQTT".to_string(),
-                        // );
+                        bot.send_message(
+                            ChatId(deserialized.chat_id),
+                            "Received message from MQTT".to_string(),
+                        ).parse_mode(ParseMode::Markdown).await.unwrap();
                     }
                     _ => {}
                 },
