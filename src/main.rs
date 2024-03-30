@@ -1,5 +1,7 @@
 #![allow(deprecated)]
 use message_types::RequestMessage;
+use rumqttc::MqttOptions;
+use serde::{Deserialize, Serialize};
 use std::sync::mpsc;
 use std::sync::mpsc::Receiver;
 use std::thread;
@@ -27,6 +29,13 @@ struct TelegramConverter;
 
 trait BotConverter<T> {
     fn bot_type_to_request_message(&self, bot_message: &T) -> RequestMessage;
+}
+
+#[derive(Deserialize, Serialize,Debug)]
+pub struct MessageEvent {
+    pub username: String,
+    pub hash: String,
+    pub chat_id: i64,
 }
 
 impl BotConverter<Message> for TelegramConverter {
@@ -205,7 +214,7 @@ pub async fn start_bot() {
     let ham = Arc::new(Mutex::new(h));
     let handler = dptree::entry()
         .branch(Update::filter_message().endpoint({
-            let ham = Arc::clone(&ham); // Clone the Arc outside of the async block
+            let ham = Arc::clone(&ham);
             move |bot: Bot, msg| {
                 let ham = Arc::clone(&ham); // Clone again for each async invocation
                 async move { message_handler(bot, msg, ham).await }
@@ -219,11 +228,43 @@ pub async fn start_bot() {
             }
         }));
 
-    Dispatcher::builder(bot, handler)
-        .enable_ctrlc_handler()
-        .build()
-        .dispatch()
-        .await;
+    let bot_task = async {
+        Dispatcher::builder(bot, handler)
+            .enable_ctrlc_handler()
+            .build()
+            .dispatch()
+            .await;
+    };
+    let mqtt_listener = async {
+        let mut mqttoptions = MqttOptions::new("ratatoskr", "127.0.0.1", 1883);
+        mqttoptions.set_keep_alive(Duration::from_secs(5));
+
+        let (client, mut eventloop) = rumqttc::AsyncClient::new(mqttoptions, 10);
+        client
+            .subscribe("messages/assistant", rumqttc::QoS::AtLeastOnce)
+            .await
+            .unwrap();
+        while let Ok(notification) = eventloop.poll().await {
+            match notification {
+                rumqttc::Event::Incoming(incoming) => match incoming {
+                    rumqttc::Packet::Publish(publish) => {
+                        let payload = publish.payload.to_vec();
+                        let deserialized: MessageEvent =
+                            rmp_serde::from_read_ref(&payload).unwrap();
+                        info!("Received publish message from MQTT: {:?}", deserialized);
+                        // bot.send_message(
+                        //     ChatId(deserialized.chat_id),
+                        //     "Received message from MQTT".to_string(),
+                        // );
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+        }
+    };
+
+    tokio::join!(bot_task, mqtt_listener);
 }
 
 pub async fn start_receiver(receiver: Receiver<String>) {
