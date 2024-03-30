@@ -52,6 +52,11 @@ pub trait MunninClient {
         role: String,
         content: String,
     ) -> Result<(), Box<dyn Error>>;
+    async fn get_chat_message(
+        &self,
+        username: &String,
+        hash: &String,
+    ) -> Result<ChatResponse, ()>;
     async fn search(&self, query: String) -> Result<Vec<SearchResponse>, ()>;
     async fn get_context(&self, username: &String) -> Result<Vec<ChatResponse>, ()>;
     async fn save_attribute(
@@ -157,6 +162,38 @@ impl MunninClient for MunninClientImpl {
         Ok(response_body)
     }
 
+    async fn get_chat_message(
+        &self,
+        username: &String,
+        hash: &String,
+    ) -> Result<ChatResponse, ()> {
+        let url = format!("{}/api/v1/chat/{}/{}", self.base_url, username, hash);
+        let client = reqwest::Client::new();
+
+        let response = client.get(url.clone()).send().await;
+
+        let response = match response {
+            Ok(response) => response,
+            Err(e) => {
+                error!("Failed to parse response to {}: {}", url.clone(), e);
+                return Err(());
+            }
+        };
+
+        info!("Response: {:?}", response);
+
+        let response_body = response.json::<ChatResponse>().await;
+        let response_body = match response_body {
+            Ok(body) => body,
+            Err(e) => {
+                error!("Failed to parse response: {}", e);
+                return Err(());
+            }
+        };
+
+        Ok(response_body)
+    }
+
     async fn search(&self, query: String) -> Result<Vec<SearchResponse>, ()> {
         let url = format!("{}/api/v1/chat", self.base_url);
         let client = reqwest::Client::new();
@@ -204,16 +241,13 @@ impl MunninClient for MunninClientImpl {
         let url = format!("{}/api/v1/attribute/{}", self.base_url, username);
         let client = reqwest::Client::new();
 
-        let request_body = serde_json::to_string(&AttributeRequest{
-            attribute,
-            value,
-        });
+        let request_body = serde_json::to_string(&AttributeRequest { attribute, value });
 
         let request_body = match request_body {
             Ok(body) => {
-              info!("request_body: {}",body);
-              body
-            },
+                info!("request_body: {}", body);
+                body
+            }
             Err(e) => panic!("Error serializing request body: {}", e),
         };
 
@@ -228,7 +262,7 @@ impl MunninClient for MunninClientImpl {
             Ok(_response) => Ok(()),
             Err(e) => {
                 error!("Failed to send message: {}", e);
-                return Err(())
+                return Err(());
             }
         }
     }
@@ -238,7 +272,10 @@ impl MunninClient for MunninClientImpl {
         username: &String,
         attribute: String,
     ) -> Result<AttributeResponse, ()> {
-        let url = format!("{}/api/v1/attribute/{}/{}", self.base_url, username, attribute);
+        let url = format!(
+            "{}/api/v1/attribute/{}/{}",
+            self.base_url, username, attribute
+        );
         let client = reqwest::Client::new();
 
         let response = client.get(url.clone()).send().await;

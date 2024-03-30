@@ -18,6 +18,8 @@ use teloxide::{
 
 use teloxide::types::{ChatAction, InputFile, ParseMode};
 
+use crate::clients::muninn::{MunninClient, MunninClientImpl};
+
 mod capabilities;
 mod clients;
 mod handler;
@@ -31,7 +33,7 @@ trait BotConverter<T> {
     fn bot_type_to_request_message(&self, bot_message: &T) -> RequestMessage;
 }
 
-#[derive(Deserialize, Serialize,Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct MessageEvent {
     pub username: String,
     pub hash: String,
@@ -254,10 +256,25 @@ pub async fn start_bot() {
                         let deserialized: MessageEvent =
                             rmp_serde::from_read_ref(&payload).unwrap();
                         info!("Received publish message from MQTT: {:?}", deserialized);
-                        bot.send_message(
-                            ChatId(deserialized.chat_id),
-                            "Received message from MQTT".to_string(),
-                        ).parse_mode(ParseMode::Markdown).await.unwrap();
+
+                        let mc = MunninClientImpl::new();
+                        let msg = mc
+                            .get_chat_message(&deserialized.username, &deserialized.hash)
+                            .await;
+                        match msg {
+                            Ok(msg) => {
+                                bot.send_message(
+                                    ChatId(deserialized.chat_id),
+                                    msg.content
+                                )
+                                .parse_mode(ParseMode::Markdown)
+                                .await
+                                .unwrap();
+                            }
+                            Err(e) => {
+                                error!("Failed to get message from muninn: {:?}", e);
+                            }
+                        }
                     }
                     _ => {}
                 },
