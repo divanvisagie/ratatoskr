@@ -85,11 +85,7 @@ async fn message_handler(
         let mut request_message: RequestMessage = bc.bot_type_to_request_message(&msg);
         let mut handler = handler.lock().await;
 
-        bot.send_chat_action(msg.chat.id, ChatAction::Typing)
-            .await?;
         let res = handler.handle_message(&mut request_message).await;
-        bot.send_chat_action(msg.chat.id, ChatAction::Typing)
-            .await?;
 
         // tokio::select! {
         //     _ = typing_loop(&bot, msg.chat.id) => (),
@@ -99,6 +95,9 @@ async fn message_handler(
         if res.text.is_empty() {
             return Ok(());
         }
+
+        bot.send_chat_action(msg.chat.id, ChatAction::Typing)
+            .await?;
 
         if let Some(bytes) = res.bytes {
             bot.send_document(msg.chat.id, InputFile::memory(bytes).file_name(res.text))
