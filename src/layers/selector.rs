@@ -1,10 +1,12 @@
 use super::Layer;
 use crate::capabilities::chat::ChatCapability;
 use crate::capabilities::debug::DebugCapability;
+use crate::capabilities::group_chat::GroupChatCapability;
 use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
 use crate::capabilities::test::TestCapability;
 use crate::clients::chat::{GptClient, OllamaClient};
+use crate::clients::embeddings::{BarnstokkrClient, OllamaEmbeddingsClient};
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
 use crate::{clients, message_types};
@@ -31,7 +33,7 @@ impl SelectorLayer {
         if cfg!(debug_assertions) {
             info!("Running in debug mode");
             let chat_client = OllamaClient::new();
-            let embeddings_client = clients::embeddings::OllamaEmbeddingsClient::new();
+            let embeddings_client = OllamaEmbeddingsClient::new();
             SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
@@ -40,12 +42,15 @@ impl SelectorLayer {
                     Box::new(SummaryCapability::new(OllamaClient::new())),
                     Box::new(TestCapability::new()),
                 ],
-                group_capabilities: vec![Box::new(SummaryCapability::new(OllamaClient::new()))],
+                group_capabilities: vec![
+                    Box::new(SummaryCapability::new(OllamaClient::new())),
+                    Box::new(GroupChatCapability::new(OllamaClient::new(), OllamaEmbeddingsClient::new())),
+                ],
             }
         } else {
             info!("Running in production mode");
-            let chat_client = clients::chat::GptClient::new();
-            let embeddings_client = clients::embeddings::BarnstokkrClient::new();
+            let chat_client = GptClient::new();
+            let embeddings_client = BarnstokkrClient::new();
             SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
@@ -54,7 +59,10 @@ impl SelectorLayer {
                     Box::new(SummaryCapability::new(GptClient::new())),
                     Box::new(TestCapability::new()),
                 ],
-                group_capabilities: vec![Box::new(SummaryCapability::new(GptClient::new()))],
+                group_capabilities: vec![
+                    Box::new(SummaryCapability::new(GptClient::new())),
+                    Box::new(GroupChatCapability::new(GptClient::new(), BarnstokkrClient::new())),
+                ],
             }
         }
     }
@@ -134,7 +142,8 @@ mod tests {
             username: "test".to_string(),
             context: Vec::new(),
             embedding: Vec::new(),
-            chat_type: message_types::ChatType::Private
+            chat_type: message_types::ChatType::Private,
+            chat_id: 0
         };
         let response = layer.execute(&mut message).await;
         assert_eq!(response.text, "Hello, test!");

@@ -2,6 +2,7 @@ use crate::{message_types::ResponseMessage, RequestMessage};
 use async_trait::async_trait;
 
 pub mod chat;
+pub mod group_chat;
 pub mod debug;
 pub mod privacy;
 pub mod summarize;
