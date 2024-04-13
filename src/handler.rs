@@ -12,7 +12,7 @@ pub struct Handler {
 impl Handler {
     pub fn new() -> Self {
         if cfg!(debug_assertions) {
-            let embeddings_client = OllamaEmbeddingsClient::new();
+            let embeddings_client = BarnstokkrClient::new();
             let selector_layer = SelectorLayer::new();
             let embedding_layer = EmbeddingLayer::new(selector_layer,embeddings_client);
             let memory_layer = MemoryLayer::new(embedding_layer);

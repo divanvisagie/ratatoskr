@@ -33,7 +33,7 @@ impl SelectorLayer {
         if cfg!(debug_assertions) {
             info!("Running in debug mode");
             let chat_client = OllamaClient::new();
-            let embeddings_client = OllamaEmbeddingsClient::new();
+            let embeddings_client = BarnstokkrClient::new();
             SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
