@@ -50,7 +50,7 @@ impl SelectorLayer {
         } else {
             info!("Running in production mode");
             let chat_client = GptClient::new();
-            let embeddings_client = BarnstokkrClient::new();
+            let embeddings_client = clients::embeddings::OllamaEmbeddingsClient::new();
             SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),

@@ -1,5 +1,5 @@
 use crate::{
-    clients::embeddings::{BarnstokkrClient, OllamaEmbeddingsClient}, layers::{
+    clients::embeddings::{OllamaEmbeddingsClient}, layers::{
         embedding::EmbeddingLayer, memory::MemoryLayer, security::SecurityLayer,
         selector::SelectorLayer, Layer,
     }, message_types::ResponseMessage, repositories::users::FsUserRepository, RequestMessage
@@ -22,7 +22,7 @@ impl Handler {
                 gateway_layer: Box::new(security_layer),
             }
         } else {
-            let embedding_client = BarnstokkrClient::new();
+            let embedding_client = OllamaEmbeddingsClient::new();
             let selector_layer = SelectorLayer::new();
             let embedding_layer = EmbeddingLayer::new(selector_layer, embedding_client);
             let memory_layer = MemoryLayer::new(embedding_layer);
