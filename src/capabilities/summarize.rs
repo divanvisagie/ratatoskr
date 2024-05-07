@@ -136,6 +136,7 @@ mod tests {
         let mock_client = MockChatClient {};
         let mut summary_capability = SummaryCapability::new(mock_client);
         let message = RequestMessage {
+            chat_id: 99,
             text: "https://divanv.com/post/structured-intelligence/".to_string(),
             username: "test".to_string(),
             context: Vec::new(),
@@ -154,6 +155,7 @@ mod tests {
         let mock_client = MockChatClient {};
         let mut summary_capability = SummaryCapability::new(mock_client);
         let message = RequestMessage {
+            chat_id: 99,
             text: "https://www.google.com".to_string(),
             username: "test".to_string(),
             context: Vec::new(),
@@ -170,6 +172,7 @@ mod tests {
         let mut summary_capability = SummaryCapability::new(mock_client);
 
         let message = RequestMessage {
+            chat_id: 99,
             text: "Hello".to_string(),
             username: "test".to_string(),
             context: Vec::new(),
