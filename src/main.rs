@@ -49,14 +49,45 @@ impl BotConverter<Message> for TelegramConverter {
                 message_types::ChatType::Group(title.to_string())
             }
         };
+
         let chat_id: i64 = message.chat.id.0;
-        info!(">>> Chat id: {}", chat_id);
-        RequestMessage::new(
-            message.text().unwrap_or_default().to_string(),
-            message.chat.username().unwrap_or_default().to_string(),
+        let text = message.text().unwrap_or_default().to_string();
+        let username = message.chat.username().unwrap_or_default().to_string();
+
+        let sender_username = message
+            .from()
+            .map(|u| u.username.clone().unwrap_or_default())
+            .unwrap_or_default();
+        let sender_name = message
+            .from()
+            .map(|u| {
+                format!(
+                    "{} {}",
+                    u.first_name.clone(),
+                    u.last_name.clone().unwrap_or_default()
+                )
+            })
+            .unwrap_or_default();
+        info!(
+            ">>> Chat id: {}\nSender username: {}\nSender: {}",
+            chat_id, sender_username, sender_name
+        );
+        let sent_by = format!("{} ({})", sender_username, sender_name);
+
+        let text = match &chat_type {
+            message_types::ChatType::Private => text,
+            message_types::ChatType::Group(_) => format!("{}: {}", sent_by, text)
+        };
+
+        RequestMessage {
+            text,
+            username,
+            context: Vec::new(),
+            embedding: Vec::new(),
             chat_type,
             chat_id,
-        )
+            sent_by,
+        }
     }
 }
 
@@ -262,13 +293,10 @@ pub async fn start_bot() {
                             .await;
                         match msg {
                             Ok(msg) => {
-                                bot.send_message(
-                                    ChatId(deserialized.chat_id),
-                                    msg.content
-                                )
-                                .parse_mode(ParseMode::Markdown)
-                                .await
-                                .unwrap();
+                                bot.send_message(ChatId(deserialized.chat_id), msg.content)
+                                    .parse_mode(ParseMode::Markdown)
+                                    .await
+                                    .unwrap();
                             }
                             Err(e) => {
                                 error!("Failed to get message from muninn: {:?}", e);

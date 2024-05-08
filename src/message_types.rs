@@ -9,22 +9,29 @@ pub enum ChatType {
 
 pub struct RequestMessage {
     pub text: String,
+
+    /// The registered username of the user who sent the message
+    /// which can also be the name of the chat if in a group
     pub username: String,
     pub context: Vec<StoredMessage>,
     pub embedding: Vec<f32>,
     pub chat_type: ChatType,
-    pub chat_id: i64
+    pub chat_id: i64,
+
+    /// Actual users name, including if in group chat
+    pub sent_by: String
 }
 
 impl RequestMessage {
-    pub fn new(text: String, username: String, chat_type: ChatType, chatId: i64) -> Self {
+    pub fn new(text: String, username: String, chat_type: ChatType, chat_id: i64) -> Self {
         RequestMessage {
             text,
             username,
             context: Vec::new(),
             embedding: Vec::new(),
             chat_type,
-            chat_id: chatId
+            chat_id,
+            sent_by: "".to_string()
         }
     }
 }

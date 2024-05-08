@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::{
     capabilities::Capability,
     clients::chat::{ChatClient, ContextBuilder, Role} ,
@@ -20,8 +22,10 @@ pub struct GroupChatCapability<'a, C: ChatClient,E:  EmbeddingsClient> {
 #[async_trait]
 impl<'a, C: ChatClient, E: EmbeddingsClient> Capability for GroupChatCapability<'a, C, E> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
-        // if it doesnt start with @
-        if !message.text.starts_with("@") {
+        let bot_name = env::var("BOT_NAME").unwrap_or_else(|_| "@".to_string());
+
+        // if it doesn't contain the bot name
+        if !message.text.contains(&bot_name) {
             return -1.0;
         }
         
