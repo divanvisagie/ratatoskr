@@ -33,7 +33,7 @@ impl<T: Layer> Layer for MemoryLayer<T> {
         let munnin_client = MunninClientImpl::new();
 
         let username = self.get_username_from_messsage(message);
-        let context = match munnin_client.get_context(&message).await {
+        let context = match munnin_client.get_context(&username, &message).await {
             Ok(context) => context,
             Err(err) => {
                 error!("Failed to get context: {:?}", err);
@@ -45,7 +45,6 @@ impl<T: Layer> Layer for MemoryLayer<T> {
             }
         };
 
-        info!("Printing context as obtained from muninn\n");
         // Convert context to stored messages
         let mut stored_context: Vec<StoredMessage> = Vec::new();
         for chat_response in context {

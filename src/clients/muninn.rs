@@ -56,7 +56,11 @@ pub trait MunninClient {
     ) -> Result<(), Box<dyn Error>>;
     async fn get_chat_message(&self, username: &String, hash: &String) -> Result<ChatResponse, ()>;
     async fn search(&self, query: String) -> Result<Vec<SearchResponse>, ()>;
-    async fn get_context(&self, username: &RequestMessage) -> Result<Vec<ChatResponse>, ()>;
+    async fn get_context(
+        &self,
+        username: &String,
+        message: &RequestMessage,
+    ) -> Result<Vec<ChatResponse>, ()>;
     async fn save_attribute(
         &self,
         username: &String,
@@ -131,8 +135,17 @@ impl MunninClient for MunninClientImpl {
 
         Ok(())
     }
-    async fn get_context(&self, message: &RequestMessage) -> Result<Vec<ChatResponse>, ()> {
-        let url = format!("{}/api/v1/chat/{}/context", self.base_url, message.username);
+    async fn get_context(
+        &self,
+        username: &String,
+        message: &RequestMessage,
+    ) -> Result<Vec<ChatResponse>, ()> {
+        let url = format!(
+            "{}/api/v1/chat/{}/context",
+            self.base_url,
+            username.clone()
+        );
+        info!("url: {}", url);
         let client = reqwest::Client::new();
 
         let hash = Sha256::digest(message.text.as_bytes());
