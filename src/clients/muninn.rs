@@ -6,6 +6,8 @@ use sha2::{Digest, Sha256};
 use std::error::Error;
 use tracing::{error, info};
 
+use crate::message_types::RequestMessage;
+
 #[derive(Serialize, Deserialize)]
 pub struct ChatRequest {
     pub role: String,
@@ -52,13 +54,9 @@ pub trait MunninClient {
         role: String,
         content: String,
     ) -> Result<(), Box<dyn Error>>;
-    async fn get_chat_message(
-        &self,
-        username: &String,
-        hash: &String,
-    ) -> Result<ChatResponse, ()>;
+    async fn get_chat_message(&self, username: &String, hash: &String) -> Result<ChatResponse, ()>;
     async fn search(&self, query: String) -> Result<Vec<SearchResponse>, ()>;
-    async fn get_context(&self, username: &String) -> Result<Vec<ChatResponse>, ()>;
+    async fn get_context(&self, username: &RequestMessage) -> Result<Vec<ChatResponse>, ()>;
     async fn save_attribute(
         &self,
         username: &String,
@@ -133,12 +131,28 @@ impl MunninClient for MunninClientImpl {
 
         Ok(())
     }
-    async fn get_context(&self, username: &String) -> Result<Vec<ChatResponse>, ()> {
-        let url = format!("{}/api/v1/chat/{}/context", self.base_url, username);
+    async fn get_context(&self, message: &RequestMessage) -> Result<Vec<ChatResponse>, ()> {
+        let url = format!("{}/api/v1/chat/{}/context", self.base_url, message.username);
         let client = reqwest::Client::new();
 
+        let hash = Sha256::digest(message.text.as_bytes());
+
+        let request_body = serde_json::to_string(&ChatRequest {
+            role: "user".to_string(),
+            content: message.text.clone(),
+            hash: format!("{:x}", hash),
+        });
+        let request_body = match request_body {
+            Ok(body) => body,
+            Err(e) => panic!("Error serializing request body: {}", e),
+        };
         // execute get request
-        let response = client.get(url.clone()).send().await;
+        let response = client
+            .post(url.clone())
+            .body(request_body)
+            .header("Content-Type", "application/json")
+            .send()
+            .await;
 
         let response = match response {
             Ok(response) => response,
@@ -162,11 +176,7 @@ impl MunninClient for MunninClientImpl {
         Ok(response_body)
     }
 
-    async fn get_chat_message(
-        &self,
-        username: &String,
-        hash: &String,
-    ) -> Result<ChatResponse, ()> {
+    async fn get_chat_message(&self, username: &String, hash: &String) -> Result<ChatResponse, ()> {
         let url = format!("{}/api/v1/chat/{}/{}", self.base_url, username, hash);
         let client = reqwest::Client::new();
 
