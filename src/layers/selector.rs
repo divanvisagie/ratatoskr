@@ -7,7 +7,7 @@ use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
 use crate::capabilities::test::TestCapability;
 use crate::clients::chat::{GptClient, OllamaClient};
-use crate::clients::embeddings::OllamaEmbeddingsClient;
+use crate::clients::embeddings::{EmbeddingsClientImpl, OllamaEmbeddingsClient};
 use crate::clients::image::{DalleClient, ImageGenerationClientImpl};
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
@@ -45,7 +45,7 @@ impl SelectorLayer {
                     Box::new(TestCapability::new()),
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
-                        OllamaEmbeddingsClient::new()
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new())
                     )),
                 ],
                 group_capabilities: vec![
@@ -56,7 +56,7 @@ impl SelectorLayer {
                     )),
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
-                        OllamaEmbeddingsClient::new()
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new())
                     )),
                 ],
             }

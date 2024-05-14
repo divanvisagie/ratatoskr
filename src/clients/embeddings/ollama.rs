@@ -9,8 +9,8 @@ use super::{EmbeddingsClient, EmbeddingsRequest, EmbeddingsResponse};
 
 /// Ollama Client
 /// Implementation of the EmbeddingsClient trait which uses the Ollama service
-pub struct OllamaEmbeddingsClient<'a> {
-    base_url: &'a str,
+pub struct OllamaEmbeddingsClient {
+    base_url: String,
 }
 
 /*
@@ -32,18 +32,18 @@ struct OllamaResponse {
     embedding: Vec<f32>,
 }
 
-impl OllamaEmbeddingsClient<'_> {
+impl OllamaEmbeddingsClient {
     //ignore unused
     #[allow(dead_code)]
     pub fn new() -> Self {
         OllamaEmbeddingsClient {
-            base_url: "http://localhost:11434",
+            base_url: "http://localhost:11434".to_string(),
         }
     }
 }
 
 #[async_trait]
-impl EmbeddingsClient for OllamaEmbeddingsClient<'_> {
+impl EmbeddingsClient for OllamaEmbeddingsClient {
     async fn get_embeddings(
         &self,
         text: String,

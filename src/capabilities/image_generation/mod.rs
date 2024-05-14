@@ -1,20 +1,26 @@
 use async_trait::async_trait;
 
 use crate::{
-    clients::{embeddings::EmbeddingsClient,image::ImageGenerationClient, image::ImageGenerationClientImpl},
+    clients::{
+        embeddings::{EmbeddingsClient, EmbeddingsClientImpl},
+        image::ImageGenerationClientImpl,
+    },
     message_types::{RequestMessage, ResponseMessage},
 };
 
 use super::{cosine_similarity, Capability};
 
-pub struct ImageGenerationCapability<E: EmbeddingsClient> {
+pub struct ImageGenerationCapability {
     description: String,
-    embedding_client: E,
+    embedding_client: EmbeddingsClientImpl,
     image_client_type: ImageGenerationClientImpl,
 }
 
-impl<E: EmbeddingsClient> ImageGenerationCapability<E> {
-    pub fn new(image_client_type: ImageGenerationClientImpl, embedding_client: E) -> Self {
+impl ImageGenerationCapability {
+    pub fn new(
+        image_client_type: ImageGenerationClientImpl,
+        embedding_client: EmbeddingsClientImpl,
+    ) -> Self {
         ImageGenerationCapability {
             description: "Generate an image from a description".to_string(),
             embedding_client,
@@ -24,7 +30,7 @@ impl<E: EmbeddingsClient> ImageGenerationCapability<E> {
 }
 
 #[async_trait]
-impl<E: EmbeddingsClient> Capability for ImageGenerationCapability<E> {
+impl Capability for ImageGenerationCapability {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
         let description_embedding = self
             .embedding_client
@@ -41,7 +47,6 @@ impl<E: EmbeddingsClient> Capability for ImageGenerationCapability<E> {
     async fn execute(&mut self, _message: &RequestMessage) -> ResponseMessage {
         // extract the client out of the type
         // let x = self.image_client_type.generate_image(message.text.clone()).await;
-
 
         // let bytes = match x {
         //     Ok(bytes) => bytes,

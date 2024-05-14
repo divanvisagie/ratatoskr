@@ -10,6 +10,26 @@ pub use ollama::OllamaEmbeddingsClient;
 pub mod openai;
 pub mod ollama;
 
+pub enum EmbeddingsClientImpl {
+    OpenAi(OpenAiEmbeddingsClient),
+    Ollama(OllamaEmbeddingsClient),
+    Mock(MockEmbeddingsClient),
+}
+
+#[async_trait]
+impl EmbeddingsClient for EmbeddingsClientImpl {
+    async fn get_embeddings(
+        &self,
+        text: String,
+    ) -> Result<Vec<f32>, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            EmbeddingsClientImpl::OpenAi(client) => client.get_embeddings(text).await,
+            EmbeddingsClientImpl::Ollama(client) => client.get_embeddings(text).await,
+            EmbeddingsClientImpl::Mock(client) => client.get_embeddings(text).await,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct EmbeddingsRequest {
     input: String,
