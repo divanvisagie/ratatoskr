@@ -6,7 +6,7 @@ use crate::capabilities::image_generation::ImageGenerationCapability;
 use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
 use crate::capabilities::test::TestCapability;
-use crate::clients::chat::{GptClient, OllamaClient};
+use crate::clients::chat::{ChatClientImpl, GptClient, OllamaClient};
 use crate::clients::embeddings::{EmbeddingsClientImpl, OllamaEmbeddingsClient};
 use crate::clients::image::{DalleClient, ImageGenerationClientImpl};
 use crate::message_types::ResponseMessage;
@@ -41,22 +41,26 @@ impl SelectorLayer {
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
                     Box::new(ChatCapability::new(chat_client, embeddings_client)),
-                    Box::new(SummaryCapability::new(OllamaClient::new())),
+                    Box::new(SummaryCapability::new(ChatClientImpl::Ollama(
+                        OllamaClient::new(),
+                    ))),
                     Box::new(TestCapability::new()),
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
-                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new())
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
                 ],
                 group_capabilities: vec![
-                    Box::new(SummaryCapability::new(OllamaClient::new())),
+                    Box::new(SummaryCapability::new(ChatClientImpl::Ollama(
+                        OllamaClient::new(),
+                    ))),
                     Box::new(GroupChatCapability::new(
                         OllamaClient::new(),
                         OllamaEmbeddingsClient::new(),
                     )),
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
-                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new())
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
                 ],
             }
@@ -69,11 +73,15 @@ impl SelectorLayer {
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
                     Box::new(ChatCapability::new(chat_client, embeddings_client)),
-                    Box::new(SummaryCapability::new(GptClient::new())),
+                    Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
+                        GptClient::new(),
+                    ))),
                     Box::new(TestCapability::new()),
                 ],
                 group_capabilities: vec![
-                    Box::new(SummaryCapability::new(GptClient::new())),
+                    Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
+                        GptClient::new(),
+                    ))),
                     Box::new(GroupChatCapability::new(
                         GptClient::new(),
                         OllamaEmbeddingsClient::new(),

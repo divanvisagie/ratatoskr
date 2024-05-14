@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use regex::Regex;
 use tracing::info;
 
-use crate::clients::chat::ContextBuilder;
+use crate::clients::chat::{ChatClientImpl, ContextBuilder};
 use crate::{
     clients::chat::{ChatClient, Role},
     message_types::ResponseMessage,
@@ -12,8 +12,8 @@ use crate::{
 use super::Capability;
 use scraper::{Html, Selector};
 
-pub struct SummaryCapability<C: ChatClient> {
-    client: C,
+pub struct SummaryCapability {
+    client: ChatClientImpl,
 }
 
 fn is_link(string: &str) -> bool {
@@ -21,14 +21,14 @@ fn is_link(string: &str) -> bool {
     url_regex.is_match(string)
 }
 
-impl<C: ChatClient> SummaryCapability<C> {
-    pub fn new(client: C) -> Self {
+impl SummaryCapability {
+    pub fn new(client: ChatClientImpl) -> Self {
         SummaryCapability { client }
     }
 }
 
 #[async_trait]
-impl<C: ChatClient> Capability for SummaryCapability<C> {
+impl Capability for SummaryCapability {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
         if message.text == "Summarize" || message.text == "Nothing" {
             return 1.0;
@@ -118,28 +118,20 @@ async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::clients::chat::Message;
-
     use super::*;
-
-    struct MockChatClient {}
-
-    #[async_trait]
-    impl ChatClient for MockChatClient {
-        async fn complete(&mut self, context: Vec<Message>) -> String {
-            "Summary of https://www.google.com goes here".to_string()
-        }
-    }
+    use crate::clients::chat::MockChatClient;
 
     #[tokio::test]
     async fn test_execute() {
         let mock_client = MockChatClient {};
-        let mut summary_capability = SummaryCapability::new(mock_client);
+        let client_impl = ChatClientImpl::Mock(mock_client);
+        let mut summary_capability = SummaryCapability::new(client_impl);
         let message = RequestMessage {
             chat_id: 99,
             text: "https://divanv.com/post/structured-intelligence/".to_string(),
             username: "test".to_string(),
             context: Vec::new(),
+            sent_by: "".to_string(),
             embedding: Vec::new(),
             chat_type: crate::message_types::ChatType::Private,
         };
@@ -153,11 +145,13 @@ mod tests {
     #[tokio::test]
     async fn test_check_when_given_link() {
         let mock_client = MockChatClient {};
-        let mut summary_capability = SummaryCapability::new(mock_client);
+        let client_impl = ChatClientImpl::Mock(mock_client);
+        let mut summary_capability = SummaryCapability::new(client_impl);
         let message = RequestMessage {
             chat_id: 99,
             text: "https://www.google.com".to_string(),
             username: "test".to_string(),
+            sent_by: "".to_string(),
             context: Vec::new(),
             embedding: Vec::new(),
             chat_type: crate::message_types::ChatType::Private,
@@ -169,13 +163,15 @@ mod tests {
     #[tokio::test]
     async fn test_check_when_given_non_link() {
         let mock_client = MockChatClient {};
-        let mut summary_capability = SummaryCapability::new(mock_client);
+        let client_impl = ChatClientImpl::Mock(mock_client);
+        let mut summary_capability = SummaryCapability::new(client_impl);
 
         let message = RequestMessage {
             chat_id: 99,
             text: "Hello".to_string(),
             username: "test".to_string(),
             context: Vec::new(),
+            sent_by: "".to_string(),
             embedding: Vec::new(),
             chat_type: crate::message_types::ChatType::Private,
         };

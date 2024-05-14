@@ -1,5 +1,6 @@
 use std::{env, fmt};
 
+use async_trait::async_trait;
 use reqwest::header;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
@@ -77,17 +78,29 @@ impl fmt::Display for Role {
 pub enum ChatClientImpl {
     OpenAi(openai::GptClient),
     Ollama(ollama::OllamaClient),
+    Mock(MockChatClient),
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl ChatClient for ChatClientImpl {
     async fn complete(&mut self, context: Vec<Message>) -> String {
         match self {
             ChatClientImpl::OpenAi(client) => client.complete(context).await,
             ChatClientImpl::Ollama(client) => client.complete(context).await,
+            ChatClientImpl::Mock(client) => client.complete(context).await,
         }
     }
 }
+
+pub struct MockChatClient {}
+
+#[async_trait]
+impl ChatClient for MockChatClient {
+    async fn complete(&mut self, context: Vec<Message>) -> String {
+        "Summary of https://www.google.com goes here".to_string()
+    }
+}
+
 
 #[async_trait::async_trait]
 pub trait ChatClient: Send + Sync {
