@@ -1,27 +1,29 @@
+use crate::clients::embeddings::EmbeddingsClient;
 use crate::{
     capabilities::Capability,
-    clients::chat::{ChatClient, ContextBuilder, Role} ,
+    clients::chat::{ChatClient, ChatClientImpl, ContextBuilder, Role},
     message_types::ResponseMessage,
     RequestMessage,
 };
-use crate::clients::embeddings::EmbeddingsClient;
 use async_trait::async_trait;
 
 use super::cosine_similarity;
 
-#[derive(Debug)]
-pub struct ChatCapability<'a, C: ChatClient,E:  EmbeddingsClient> {
-    client: C,
+pub struct ChatCapability<'a, E: EmbeddingsClient> {
+    client: ChatClientImpl,
     embedding_client: E,
     description: String,
     prompt: &'a str,
 }
 
 #[async_trait]
-impl<'a, C: ChatClient, E: EmbeddingsClient> Capability for ChatCapability<'a, C, E> {
+impl<'a, E: EmbeddingsClient> Capability for ChatCapability<'a, E> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
-
-        let description_embedding = self.embedding_client.get_embeddings(self.description.clone()).await.unwrap();
+        let description_embedding = self
+            .embedding_client
+            .get_embeddings(self.description.clone())
+            .await
+            .unwrap();
 
         cosine_similarity(
             message.embedding.as_slice(),
@@ -45,8 +47,8 @@ impl<'a, C: ChatClient, E: EmbeddingsClient> Capability for ChatCapability<'a, C
     }
 }
 
-impl<'a, C: ChatClient, E: EmbeddingsClient> ChatCapability<'a, C, E> {
-    pub fn new(client: C, embeddings_client: E) -> Self {
+impl<'a, E: EmbeddingsClient> ChatCapability<'a, E> {
+    pub fn new(client: ChatClientImpl, embeddings_client: E) -> Self {
         //include bytes from prompt.txt
         let prompt = include_str!("prompt.txt");
         ChatCapability {

@@ -40,7 +40,10 @@ impl SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
-                    Box::new(ChatCapability::new(chat_client, embeddings_client)),
+                    Box::new(ChatCapability::new(
+                        ChatClientImpl::Ollama(chat_client),
+                        embeddings_client,
+                    )),
                     Box::new(SummaryCapability::new(ChatClientImpl::Ollama(
                         OllamaClient::new(),
                     ))),
@@ -72,7 +75,10 @@ impl SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
-                    Box::new(ChatCapability::new(chat_client, embeddings_client)),
+                    Box::new(ChatCapability::new(
+                        ChatClientImpl::OpenAi(chat_client),
+                        embeddings_client,
+                    )),
                     Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
                         GptClient::new(),
                     ))),
