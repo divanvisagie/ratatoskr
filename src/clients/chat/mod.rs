@@ -74,6 +74,21 @@ impl fmt::Display for Role {
     }
 }
 
+pub enum ChatClientImpl {
+    OpenAi(openai::GptClient),
+    Ollama(ollama::OllamaClient),
+}
+
+#[async_trait::async_trait]
+impl ChatClient for ChatClientImpl {
+    async fn complete(&mut self, context: Vec<Message>) -> String {
+        match self {
+            ChatClientImpl::OpenAi(client) => client.complete(context).await,
+            ChatClientImpl::Ollama(client) => client.complete(context).await,
+        }
+    }
+}
+
 #[async_trait::async_trait]
 pub trait ChatClient: Send + Sync {
     async fn complete(&mut self, context: Vec<Message>) -> String;
