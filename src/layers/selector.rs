@@ -2,11 +2,13 @@ use super::Layer;
 use crate::capabilities::chat::ChatCapability;
 use crate::capabilities::debug::DebugCapability;
 use crate::capabilities::group_chat::GroupChatCapability;
+use crate::capabilities::image_generation::ImageGenerationCapability;
 use crate::capabilities::privacy::PrivacyCapability;
 use crate::capabilities::summarize::SummaryCapability;
 use crate::capabilities::test::TestCapability;
 use crate::clients::chat::{GptClient, OllamaClient};
 use crate::clients::embeddings::OllamaEmbeddingsClient;
+use crate::clients::image::{DalleClient, ImageGenerationClientImpl};
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
 use crate::{clients, message_types};
@@ -41,12 +43,20 @@ impl SelectorLayer {
                     Box::new(ChatCapability::new(chat_client, embeddings_client)),
                     Box::new(SummaryCapability::new(OllamaClient::new())),
                     Box::new(TestCapability::new()),
+                    Box::new(ImageGenerationCapability::new(
+                        ImageGenerationClientImpl::Dalle(DalleClient::new()),
+                        OllamaEmbeddingsClient::new()
+                    )),
                 ],
                 group_capabilities: vec![
                     Box::new(SummaryCapability::new(OllamaClient::new())),
                     Box::new(GroupChatCapability::new(
                         OllamaClient::new(),
                         OllamaEmbeddingsClient::new(),
+                    )),
+                    Box::new(ImageGenerationCapability::new(
+                        ImageGenerationClientImpl::Dalle(DalleClient::new()),
+                        OllamaEmbeddingsClient::new()
                     )),
                 ],
             }
@@ -150,6 +160,7 @@ mod tests {
             embedding: Vec::new(),
             chat_type: message_types::ChatType::Private,
             chat_id: 0,
+            sent_by: "".to_string(),
         };
         let response = layer.execute(&mut message).await;
         assert_eq!(response.text, "Hello, test!");

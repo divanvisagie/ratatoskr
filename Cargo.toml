@@ -20,6 +20,8 @@ tracing-subscriber = "0.3.18"
 scraper = "0.19.0"
 rumqttc = "0.24.0"
 rmp-serde = "1.1.2"
+anyhow = "1.0.83"
+base64 = "0.22.1"
 
 [profile.release]
 lto = false
