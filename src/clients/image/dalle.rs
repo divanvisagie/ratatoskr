@@ -1,6 +1,9 @@
-use std::{env, fs::File, io::Write};
+use std::{env, fs::File, io::{Read, Write}, sync::Arc};
 
-use anyhow::Result;
+use async_openai::{
+    types::{CreateImageRequestArgs, Image, ImageModel, ImageSize, ResponseFormat},
+    Client,
+};
 use async_trait::async_trait;
 use reqwest::header;
 use serde::{Deserialize, Serialize};
@@ -55,67 +58,34 @@ impl DalleClient {
 
 #[async_trait]
 impl ImageGenerationClient for DalleClient {
-    async fn generate_image(&self, text: String) -> Result<Vec<u8>> {
-        let api_key =
-            env::var("OPENAI_API_KEY").expect("Missing OPENAI_API_KEY environment variable");
+    async fn generate_image(&self, text: String) -> Result<Vec<u8>, ()> {
+        let client = Client::new();
 
-        let client = reqwest::Client::new();
-        let url = "https://api.openai.com/v1/images/generations";
+        let request = CreateImageRequestArgs::default()
+            .prompt(text)
+            .n(1)
+            .response_format(ResponseFormat::Url)
+            .size(ImageSize::S1024x1024)
+            .user("async-openai")
+            .model(ImageModel::DallE3)
+            .build()
+            .unwrap();
+        let response = client.images().create(request).await.unwrap();
 
-        let mut headers = header::HeaderMap::new();
-        headers.insert(
-            header::CONTENT_TYPE,
-            header::HeaderValue::from_static("application/json"),
-        );
-        headers.insert(
-            header::AUTHORIZATION,
-            header::HeaderValue::from_str(&format!("Bearer {}", api_key)).unwrap(),
-        );
+        let image: &Arc<Image> = response.data.first().unwrap();
 
-        let request_body = serde_json::to_string(&DalleRequest {
-            model: "dall-e-3".to_string(),
-            prompt: text,
-            n: 1,
-            size: "1024x1024".to_string(),
-        });
-
-        let request_body = match request_body {
-            Ok(body) => body,
-            Err(e) => panic!("Error serializing request body: {}", e),
-        };
-
-        let response = client
-            .post(url)
-            .headers(headers)
-            .body(request_body)
-            .send()
-            .await;
-
-        let response = match response {
-            Ok(response) => response.text().await,
-            Err(e) => {
-                error!("Error: {}", e);
-                return Err(e.into());
-            }
-        };
-
-        let response_text = match response {
-            Ok(response) => response,
-            Err(e) => {
-                error!("Error after trying to unwrap: {}", e);
-                return Err(e.into());
-            }
-        };
-
-        let response_object = parse_response(&response_text).await?;
-
-        Ok(response_object)
+        // &Arc<Image> to bytes
+        let paths = response.save("/tmp/ratatoskr").await.unwrap();
+        let mut file = File::open(paths.first().unwrap()).unwrap();
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer).unwrap();
+        Ok(buffer)
     }
 }
 
-async fn parse_response(response_text: &str) -> Result<Vec<u8>> {
+async fn parse_response(response_text: &str) -> Result<Vec<u8>, ()> {
     // first convert to response type and get the url
-    let response_object: DalleResponse = serde_json::from_str(&response_text)?;
+    let response_object: DalleResponse = serde_json::from_str(&response_text).unwrap();
 
     // then download the image from the url
     let url = response_object.data.first().unwrap().url.clone();
@@ -132,7 +102,7 @@ async fn parse_response(response_text: &str) -> Result<Vec<u8>> {
         Ok(response) => response,
         Err(e) => {
             error!("Error: {}", e);
-            return Err(e.into());
+            return Err(());
         }
     };
 
@@ -146,13 +116,13 @@ async fn parse_response(response_text: &str) -> Result<Vec<u8>> {
         Ok(image) => image,
         Err(e) => {
             error!("Error getting bytes: {}", e);
-            return Err(e.into());
+            return Err(());
         }
     };
 
     info!("Image downloaded successfully {}", image);
 
-    let image = base64::decode(image)?;
+    let image = base64::decode(image).unwrap();
 
     // also save to disk
     // let mut file = File::create("/tmp/image.png")?;

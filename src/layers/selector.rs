@@ -47,6 +47,10 @@ impl SelectorLayer {
                         GptClient::new(),
                     ))),
                     Box::new(TestCapability::new()),
+                    Box::new(ImageGenerationCapability::new(
+                        ImageGenerationClientImpl::Dalle(DalleClient::new()),
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
+                    )),
                 ],
                 group_capabilities: vec![
                     Box::new(SummaryCapability::new(ChatClientImpl::Ollama(

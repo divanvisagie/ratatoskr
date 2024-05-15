@@ -22,6 +22,7 @@ rumqttc = "0.24.0"
 rmp-serde = "1.1.2"
 anyhow = "1.0.83"
 base64 = "0.22.1"
+async-openai = "0.21.0"
 
 [profile.release]
 lto = false

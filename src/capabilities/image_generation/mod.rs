@@ -1,10 +1,11 @@
 #[allow(dead_code)]
 use async_trait::async_trait;
+use tracing::info;
 
 use crate::{
     clients::{
         embeddings::{EmbeddingsClient, EmbeddingsClientImpl},
-        image::ImageGenerationClientImpl,
+        image::{ImageGenerationClientImpl, ImageGenerationClient},
     },
     message_types::{RequestMessage, ResponseMessage},
 };
@@ -23,7 +24,7 @@ impl ImageGenerationCapability {
         embedding_client: EmbeddingsClientImpl,
     ) -> Self {
         ImageGenerationCapability {
-            description: "Generate an image from a description".to_string(),
+            description: "Could you generate me an image?".to_string(),
             embedding_client,
             image_client_type,
         }
@@ -45,32 +46,29 @@ impl Capability for ImageGenerationCapability {
         )
     }
 
-    async fn execute(&mut self, _message: &RequestMessage) -> ResponseMessage {
+    async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
         // extract the client out of the type
-        // let x = self.image_client_type.generate_image(message.text.clone()).await;
+        let x = self
+            .image_client_type
+            .generate_image(message.text.clone())
+            .await;
 
-        // let bytes = match x {
-        //     Ok(bytes) => bytes,
-        //     Err(_) => return ResponseMessage {
-        //         bytes: None,
-        //         options: None,
-        //         text: "Failed to generate image".to_string(),
-        //     },
-        // };
-        //
-        //
-        // // create new response message stub
-        // let response = ResponseMessage {
-        //     bytes: Some(bytes),
-        //     options: None,
-        //     text: "image.png".to_string(),
-        // };
-        // response
+        let bytes = match x {
+            Ok(bytes) => bytes,
+            Err(_) => return ResponseMessage {
+                bytes: None,
+                options: None,
+                text: "Failed to generate image".to_string(),
+            },
+        };
 
-        ResponseMessage {
-            bytes: None,
+        info!("Generated image with {} bytes", bytes.len());
+        // create new response message stub
+        let response = ResponseMessage {
+            bytes: Some(bytes),
             options: None,
-            text: "Image generation is currently under development".to_string(),
-        }
+            text: "image.png".to_string(),
+        };
+        response
     }
 }
