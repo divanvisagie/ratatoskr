@@ -1,3 +1,5 @@
+use std::env;
+
 use super::Layer;
 use crate::capabilities::chat::ChatCapability;
 use crate::capabilities::debug::DebugCapability;
@@ -46,24 +48,25 @@ impl SelectorLayer {
                     Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
                         GptClient::new(),
                     ))),
-                    Box::new(TestCapability::new()),
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
+                    Box::new(TestCapability::new()),
                 ],
                 group_capabilities: vec![
                     Box::new(SummaryCapability::new(ChatClientImpl::Ollama(
                         OllamaClient::new(),
                     ))),
-                    Box::new(GroupChatCapability::new(
-                        OllamaClient::new(),
-                        OllamaEmbeddingsClient::new(),
-                    )),
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
+                    Box::new(GroupChatCapability::new(
+                        OllamaClient::new(),
+                        OllamaEmbeddingsClient::new(),
+                    )),
+                    Box::new(TestCapability::new()),
                 ],
             }
         } else {
@@ -79,6 +82,10 @@ impl SelectorLayer {
                     Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
                         GptClient::new(),
                     ))),
+                    Box::new(ImageGenerationCapability::new(
+                        ImageGenerationClientImpl::Dalle(DalleClient::new()),
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
+                    )),
                     Box::new(TestCapability::new()),
                 ],
                 group_capabilities: vec![
@@ -88,6 +95,10 @@ impl SelectorLayer {
                     Box::new(GroupChatCapability::new(
                         GptClient::new(),
                         OllamaEmbeddingsClient::new(),
+                    )),
+                    Box::new(ImageGenerationCapability::new(
+                        ImageGenerationClientImpl::Dalle(DalleClient::new()),
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
                 ],
             }
@@ -116,6 +127,11 @@ impl SelectorLayer {
     }
 
     async fn execute_group(&mut self, message: &mut RequestMessage) -> ResponseMessage {
+        let bot_name = env::var("BOT_NAME").unwrap_or_else(|_| "@".to_string());
+        if !message.text.contains(&bot_name) {
+            return ResponseMessage::new("".to_string())
+        }
+
         let mut best: Option<&mut Box<dyn Capability>> = None;
         let mut best_score = -1.0;
 

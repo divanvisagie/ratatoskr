@@ -1,3 +1,5 @@
+use std::env;
+
 #[allow(dead_code)]
 use async_trait::async_trait;
 use tracing::info;
@@ -24,7 +26,7 @@ impl ImageGenerationCapability {
         embedding_client: EmbeddingsClientImpl,
     ) -> Self {
         ImageGenerationCapability {
-            description: "Could you generate me an image?".to_string(),
+            description: "A user has asked for an image to be generated.".to_string(),
             embedding_client,
             image_client_type,
         }
@@ -40,6 +42,16 @@ impl Capability for ImageGenerationCapability {
             .await
             .unwrap();
 
+
+        // reject with -1.0 if does not contain the words generate or
+        // image or picture
+        if !message.text.contains("generate")
+            && !message.text.contains("image")
+            && !message.text.contains("picture")
+        {
+            return -1.0;
+        }
+
         cosine_similarity(
             message.embedding.as_slice(),
             description_embedding.as_slice(),
@@ -48,12 +60,12 @@ impl Capability for ImageGenerationCapability {
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
         // extract the client out of the type
-        let x = self
+        let image_response = self
             .image_client_type
             .generate_image(message.text.clone())
             .await;
 
-        let bytes = match x {
+        let bytes = match image_response {
             Ok(bytes) => bytes,
             Err(_) => return ResponseMessage {
                 bytes: None,

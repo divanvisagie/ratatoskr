@@ -131,6 +131,12 @@ async fn message_handler(
             .await?;
 
         if let Some(bytes) = res.bytes {
+            // if the text ends with png send as photo, otherwise send as documnt
+            if res.text.ends_with(".png") {
+                bot.send_photo(msg.chat.id, InputFile::memory(bytes).file_name(res.text))
+                    .await?;
+                return Ok(());
+            }
             bot.send_document(msg.chat.id, InputFile::memory(bytes).file_name(res.text))
                 .await?;
 

@@ -1,7 +1,7 @@
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::error;
 
 use super::EmbeddingsClient;
 
@@ -46,7 +46,6 @@ impl EmbeddingsClient for OllamaEmbeddingsClient {
         &self,
         text: String,
     ) -> Result<Vec<f32>, Box<dyn std::error::Error + Send + Sync>> {
-        info!("Ollama embeddings for: {}", text);
         let url = format!("{}/api/embeddings", self.base_url,);
         let client = reqwest::Client::new();
 

@@ -22,19 +22,12 @@ pub struct GroupChatCapability<'a, C: ChatClient,E:  EmbeddingsClient> {
 #[async_trait]
 impl<'a, C: ChatClient, E: EmbeddingsClient> Capability for GroupChatCapability<'a, C, E> {
     async fn check(&mut self, message: &RequestMessage) -> f32 {
-        let bot_name = env::var("BOT_NAME").unwrap_or_else(|_| "@".to_string());
-
-        // if it doesn't contain the bot name
-        if !message.text.contains(&bot_name) {
-            return -1.0;
-        }
-        
         let description_embedding = self.embedding_client.get_embeddings(self.description.clone()).await.unwrap();
 
         cosine_similarity(
             message.embedding.as_slice(),
             description_embedding.as_slice(),
-        )
+        ) + 0.02
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
@@ -60,7 +53,7 @@ impl<'a, C: ChatClient, E: EmbeddingsClient> GroupChatCapability<'a, C, E> {
         GroupChatCapability {
             client,
             embedding_client: embeddings_client,
-            description: "Any question a user may have".to_string(),
+            description: "A user used @ and asked a question that does not request image generation".to_string(),
             prompt,
         }
     }

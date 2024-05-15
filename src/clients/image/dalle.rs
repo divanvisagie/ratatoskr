@@ -68,17 +68,45 @@ impl ImageGenerationClient for DalleClient {
             .size(ImageSize::S1024x1024)
             .user("async-openai")
             .model(ImageModel::DallE3)
-            .build()
-            .unwrap();
-        let response = client.images().create(request).await.unwrap();
+            .build();
 
-        let image: &Arc<Image> = response.data.first().unwrap();
+        let request = match request {
+            Ok(request) => request,
+            Err(e) => {
+                error!("Error creating request: {}", e);
+                return Err(());
+            }
+        };
+        let response = client.images().create(request).await;
+        let response = match response {
+            Ok(response) => response,
+            Err(e) => {
+                error!("Error in response: {}", e);
+                return Err(());
+            }
+        };
 
         // &Arc<Image> to bytes
-        let paths = response.save("/tmp/ratatoskr").await.unwrap();
-        let mut file = File::open(paths.first().unwrap()).unwrap();
+        let paths = response.save("/tmp/ratatoskr").await;
+        let paths = match paths {
+            Ok(paths) => paths,
+            Err(e) => {
+                error!("Error saving image: {}", e);
+                return Err(());
+            }
+        };
+
+        let path = paths.first();
+        let path = match path {
+            Some(path) => path,
+            None => {
+                error!("No path found");
+                return Err(());
+            }
+        };
+        let mut file = File::open(path).unwrap();
         let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer).unwrap();
+        file.read_to_end(&mut buffer);
         Ok(buffer)
     }
 }
