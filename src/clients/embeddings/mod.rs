@@ -1,8 +1,7 @@
-use std::env;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::info;
 
 pub use openai::OpenAiEmbeddingsClient;
 pub use ollama::OllamaEmbeddingsClient;
@@ -10,6 +9,7 @@ pub use ollama::OllamaEmbeddingsClient;
 pub mod openai;
 pub mod ollama;
 
+#[allow(dead_code)]
 pub enum EmbeddingsClientImpl {
     OpenAi(OpenAiEmbeddingsClient),
     Ollama(OllamaEmbeddingsClient),

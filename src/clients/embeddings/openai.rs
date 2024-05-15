@@ -2,8 +2,7 @@ use std::env;
 
 use async_trait::async_trait;
 use reqwest::header;
-use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::error;
 
 use super::{EmbeddingsClient, EmbeddingsRequest, EmbeddingsResponse};
 

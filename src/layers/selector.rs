@@ -9,9 +9,10 @@ use crate::capabilities::test::TestCapability;
 use crate::clients::chat::{ChatClientImpl, GptClient, OllamaClient};
 use crate::clients::embeddings::{EmbeddingsClientImpl, OllamaEmbeddingsClient};
 use crate::clients::image::{DalleClient, ImageGenerationClientImpl};
+use crate::message_types;
 use crate::message_types::ResponseMessage;
 use crate::{capabilities::Capability, RequestMessage};
-use crate::{clients, message_types};
+
 use async_trait::async_trait;
 use tracing::info;
 
@@ -34,24 +35,18 @@ impl SelectorLayer {
     pub fn new() -> Self {
         if cfg!(debug_assertions) {
             info!("Running in debug mode");
-            let chat_client = OllamaClient::new();
-            let embeddings_client = OllamaEmbeddingsClient::new();
             SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
                     Box::new(ChatCapability::new(
-                        ChatClientImpl::Ollama(chat_client),
-                        embeddings_client,
-                    )),
-                    Box::new(SummaryCapability::new(ChatClientImpl::Ollama(
-                        OllamaClient::new(),
-                    ))),
-                    Box::new(TestCapability::new()),
-                    Box::new(ImageGenerationCapability::new(
-                        ImageGenerationClientImpl::Dalle(DalleClient::new()),
+                        ChatClientImpl::OpenAi(GptClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
+                    Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
+                        GptClient::new(),
+                    ))),
+                    Box::new(TestCapability::new()),
                 ],
                 group_capabilities: vec![
                     Box::new(SummaryCapability::new(ChatClientImpl::Ollama(
@@ -69,15 +64,13 @@ impl SelectorLayer {
             }
         } else {
             info!("Running in production mode");
-            let chat_client = GptClient::new();
-            let embeddings_client = clients::embeddings::OllamaEmbeddingsClient::new();
             SelectorLayer {
                 private_capabilities: vec![
                     Box::new(DebugCapability::new()),
                     Box::new(PrivacyCapability::new()),
                     Box::new(ChatCapability::new(
-                        ChatClientImpl::OpenAi(chat_client),
-                        embeddings_client,
+                        ChatClientImpl::OpenAi(GptClient::new()),
+                        EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
                     )),
                     Box::new(SummaryCapability::new(ChatClientImpl::OpenAi(
                         GptClient::new(),
@@ -99,7 +92,7 @@ impl SelectorLayer {
 
     async fn execute_private(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         let mut best: Option<&mut Box<dyn Capability>> = None;
-        let mut best_score = 0.0;
+        let mut best_score = -1.0;
 
         for capability in &mut self.private_capabilities {
             let score = capability.check(message).await;
@@ -120,7 +113,7 @@ impl SelectorLayer {
 
     async fn execute_group(&mut self, message: &mut RequestMessage) -> ResponseMessage {
         let mut best: Option<&mut Box<dyn Capability>> = None;
-        let mut best_score = 0.0;
+        let mut best_score = -1.0;
 
         for capability in &mut self.group_capabilities {
             let score = capability.check(message).await;

@@ -12,7 +12,7 @@ impl Capability for DebugCapability {
         if message.text == "/debug" {
             1.0
         } else {
-            0.0
+            -1.0
         }
     }
 

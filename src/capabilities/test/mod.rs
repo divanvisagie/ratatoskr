@@ -17,7 +17,7 @@ impl Capability for TestCapability {
         {
             1.0
         } else {
-            0.0
+            -1.0
         }
     }
 

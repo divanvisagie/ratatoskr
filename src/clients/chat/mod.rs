@@ -1,10 +1,8 @@
-use std::{env, fmt};
+use std::fmt;
 
 use async_trait::async_trait;
-use reqwest::header;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
-use tracing::error;
 
 pub mod ollama;
 pub mod openai;
@@ -78,6 +76,8 @@ impl fmt::Display for Role {
 pub enum ChatClientImpl {
     OpenAi(openai::GptClient),
     Ollama(ollama::OllamaClient),
+
+    #[allow(dead_code)]
     Mock(MockChatClient),
 }
 
@@ -96,11 +96,10 @@ pub struct MockChatClient {}
 
 #[async_trait]
 impl ChatClient for MockChatClient {
-    async fn complete(&mut self, context: Vec<Message>) -> String {
+    async fn complete(&mut self, _context: Vec<Message>) -> String {
         "Summary of https://www.google.com goes here".to_string()
     }
 }
-
 
 #[async_trait::async_trait]
 pub trait ChatClient: Send + Sync {

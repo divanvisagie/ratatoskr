@@ -1,7 +1,7 @@
 use std::borrow::Borrow;
 
 use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::error;
 
 use async_trait::async_trait;
 

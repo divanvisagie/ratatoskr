@@ -36,7 +36,7 @@ impl Capability for SummaryCapability {
         if is_link(&message.text) {
             return 1.0;
         }
-        0.0
+        -1.0
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {

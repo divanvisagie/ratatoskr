@@ -1,10 +1,8 @@
-use serde::{Deserialize, Serialize};
-use tracing::{error, info};
+use tracing::error;
 
-use std::{env, fmt};
+use std::env;
 
 use reqwest::header;
-use serde_json::Result;
 use super::{parse_response, ChatClient, ChatRequest, Message};
 
 pub struct GptClient;
@@ -38,7 +36,7 @@ impl ChatClient for GptClient {
         );
 
         let chat_request = ChatRequest {
-            model: "gpt-4-turbo-preview".to_string(),
+            model: "gpt-4o".to_string(),
             messages: context.clone(),
         };
 

@@ -1,11 +1,9 @@
-use std::env;
 
 use async_trait::async_trait;
-use reqwest::header;
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};
 
-use super::{EmbeddingsClient, EmbeddingsRequest, EmbeddingsResponse};
+use super::EmbeddingsClient;
 
 /// Ollama Client
 /// Implementation of the EmbeddingsClient trait which uses the Ollama service

@@ -1,9 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tracing::{error, info};
 
-use std::{env, fmt};
 
-use reqwest::header;
 use serde_json::Result;
 use super::{ChatClient, Message};
 

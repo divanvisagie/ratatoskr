@@ -29,7 +29,7 @@ impl Capability for PrivacyCapability {
         if message.text.to_lowercase().starts_with("/privacy") {
             1.0
         } else {
-            0.0
+            -1.0
         }
     }
 
