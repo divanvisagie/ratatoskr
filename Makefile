@@ -24,3 +24,7 @@ install:
 
 dev:
 	cargo watch -x run
+
+update:
+	cargo update --aggressive
+
