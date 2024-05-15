@@ -25,6 +25,7 @@ impl ChatClient for GptClient {
         let client = reqwest::Client::new();
         let url = "https://api.openai.com/v1/chat/completions";
 
+        // {{user_info}}
         let mut headers = header::HeaderMap::new();
         headers.insert(
             header::CONTENT_TYPE,

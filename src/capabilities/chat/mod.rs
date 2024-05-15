@@ -34,7 +34,11 @@ impl Capability for ChatCapability {
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
         let mut builder = ContextBuilder::new();
 
-        builder.add_message(Role::System, self.prompt.to_string());
+        // replace {{user_info}} in the prompt with actual user info
+        let userinfo = format!("User: {}", message.username);
+        let prompt = self.prompt.replace("{{user_info}}", &userinfo);
+
+        builder.add_message(Role::System, prompt.to_string());
         let context = message.context.iter().collect::<Vec<_>>();
         context.iter().for_each(|m| {
             builder.add_message(m.role.clone(), m.text.clone());
