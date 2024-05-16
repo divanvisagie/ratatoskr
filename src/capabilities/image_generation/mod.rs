@@ -63,8 +63,10 @@ impl Capability for ImageGenerationCapability {
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
         let mut builder = ContextBuilder::new();
     
-        let sys_message = 
-            "You are a language model designed to help an image generation model by turning a users context and query into a prompt that can be used to generate an image".to_string();
+        let prompt = include_str!("prompt.txt").to_string();
+        let userinfo = format!("User: {}", message.username);
+        let sys_message = prompt.replace("{{user_info}}", &userinfo);
+
         builder.add_message(Role::System, sys_message);
 
         let context = message.context.iter().collect::<Vec<_>>();
