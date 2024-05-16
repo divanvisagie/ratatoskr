@@ -1,5 +1,6 @@
 use crate::{message_types::ResponseMessage, RequestMessage};
 use async_trait::async_trait;
+use teloxide::Bot;
 
 pub mod embedding;
 pub mod memory;

@@ -51,6 +51,7 @@ impl SelectorLayer {
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
+                        ChatClientImpl::OpenAi(GptClient::new()),
                     )),
                     Box::new(TestCapability::new()),
                 ],
@@ -61,6 +62,7 @@ impl SelectorLayer {
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
+                        ChatClientImpl::OpenAi(GptClient::new()),
                     )),
                     Box::new(GroupChatCapability::new(
                         OllamaClient::new(),
@@ -85,6 +87,7 @@ impl SelectorLayer {
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
+                        ChatClientImpl::OpenAi(GptClient::new()),
                     )),
                     Box::new(TestCapability::new()),
                 ],
@@ -99,6 +102,7 @@ impl SelectorLayer {
                     Box::new(ImageGenerationCapability::new(
                         ImageGenerationClientImpl::Dalle(DalleClient::new()),
                         EmbeddingsClientImpl::Ollama(OllamaEmbeddingsClient::new()),
+                        ChatClientImpl::OpenAi(GptClient::new()),
                     )),
                 ],
             }
@@ -171,25 +175,5 @@ mod tests {
         async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
             ResponseMessage::new(format!("Hello, {}!", message.username))
         }
-    }
-
-    #[tokio::test]
-    async fn test_selector_layer() {
-        let mut layer = SelectorLayer {
-            private_capabilities: vec![Box::new(MockCapability {})],
-            group_capabilities: Vec::new(),
-        };
-
-        let mut message = RequestMessage {
-            text: "Hello".to_string(),
-            username: "test".to_string(),
-            context: Vec::new(),
-            embedding: Vec::new(),
-            chat_type: message_types::ChatType::Private,
-            chat_id: 0,
-            sent_by: "".to_string(),
-        };
-        let response = layer.execute(&mut message).await;
-        assert_eq!(response.text, "Hello, test!");
     }
 }

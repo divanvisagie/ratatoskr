@@ -6,8 +6,7 @@ use tracing::info;
 
 use crate::{
     clients::{
-        embeddings::{EmbeddingsClient, EmbeddingsClientImpl},
-        image::{ImageGenerationClientImpl, ImageGenerationClient},
+        chat::{ChatClient, ChatClientImpl, ContextBuilder, Message, Role}, embeddings::{EmbeddingsClient, EmbeddingsClientImpl}, image::{ImageGenerationClient, ImageGenerationClientImpl}
     },
     message_types::{RequestMessage, ResponseMessage},
 };
@@ -18,17 +17,20 @@ pub struct ImageGenerationCapability {
     description: String,
     embedding_client: EmbeddingsClientImpl,
     image_client_type: ImageGenerationClientImpl,
+    chat_client: ChatClientImpl
 }
 
 impl ImageGenerationCapability {
     pub fn new(
         image_client_type: ImageGenerationClientImpl,
         embedding_client: EmbeddingsClientImpl,
+        chat_client: ChatClientImpl
     ) -> Self {
         ImageGenerationCapability {
             description: "A user has asked for an image to be generated.".to_string(),
             embedding_client,
             image_client_type,
+            chat_client
         }
     }
 }
@@ -59,10 +61,25 @@ impl Capability for ImageGenerationCapability {
     }
 
     async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage {
+        let mut builder = ContextBuilder::new();
+    
+        let sys_message = 
+            "You are a language model designed to help an image generation model by turning a users context and query into a prompt that can be used to generate an image".to_string();
+        builder.add_message(Role::System, sys_message);
+
+        let context = message.context.iter().collect::<Vec<_>>();
+        context.iter().for_each(|m| {
+            builder.add_message(m.role.clone(), m.text.clone());
+        });
+
+        builder.add_message(Role::User, message.text.clone());
+        
+        let prompt = self.chat_client.complete(builder.build()).await;
+
         // extract the client out of the type
         let image_response = self
             .image_client_type
-            .generate_image(message.text.clone())
+            .generate_image(prompt.clone())
             .await;
 
         let bytes = match image_response {
