@@ -1,4 +1,3 @@
-use std::env;
 
 #[allow(dead_code)]
 use async_trait::async_trait;
@@ -6,7 +5,7 @@ use tracing::info;
 
 use crate::{
     clients::{
-        chat::{ChatClient, ChatClientImpl, ContextBuilder, Message, Role}, embeddings::{EmbeddingsClient, EmbeddingsClientImpl}, image::{ImageGenerationClient, ImageGenerationClientImpl}
+        chat::{ChatClient, ChatClientImpl, ContextBuilder, Role}, embeddings::{EmbeddingsClient, EmbeddingsClientImpl}, image::{ImageGenerationClient, ImageGenerationClientImpl}
     },
     message_types::{RequestMessage, ResponseMessage},
 };

@@ -52,12 +52,13 @@ impl Capability for SummaryCapability {
                 .filter(|m| m.role.to_string() == "user")
                 .last()
                 .unwrap();
-            let article_text = fetch_and_summarize(&input_message.text)
+            let article_text = fetch_content(&input_message.text)
                 .await
                 .unwrap_or_else(|_| "".to_string());
 
             info!("article_text: {}", article_text);
-            let prompt = "The following is an article that the user has sent you, send them a brief TLDR summary describing any main takeaways that might be useful";
+            let prompt = "The following is an article that the user has sent you, send them a brief
+                TLDR summary describing any main takeaways that might be useful";
             let mut context = ContextBuilder::new();
             context.add_message(Role::System, prompt.to_string());
             context.add_message(Role::User, message.text.clone());
@@ -86,11 +87,7 @@ impl Capability for SummaryCapability {
     }
 }
 
-async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
-    let html = reqwest::get(url).await.unwrap().text().await.unwrap();
-    let document = Html::parse_document(&html);
-
-    // Attempt to find the main article content
+fn get_main_article_content(document: &Html) -> String {
     let article_selector = Selector::parse("article, .article, .post, .content").unwrap();
     let mut article_texts = Vec::new();
 
@@ -98,19 +95,43 @@ async fn fetch_and_summarize(url: &str) -> Result<String, ()> {
         article_texts.push(element.text().collect::<Vec<_>>().join(" "));
     }
 
-    // If still empty use meta description
     if article_texts.is_empty() {
-        let meta_description_selector = Selector::parse("meta[name=description]").unwrap();
-        for element in document.select(&meta_description_selector) {
-            article_texts.push(element.value().attr("content").unwrap().to_string());
-        }
+        match Selector::parse("body") {
+            Ok(selector) => {
+                for element in document.select(&selector) {
+                    article_texts.push(element.text().collect::<Vec<_>>().join(" "));
+                }
+            }
+            Err(_) => return "".to_string(),
+        };
     }
 
-    let summary = article_texts.join(" ");
+    article_texts.join(" ")
+}
 
-    // If no article content was found, you might fallback to another strategy or return an error
+fn get_meta_description(document: &Html) -> String {
+    let meta_description_selector = Selector::parse("meta[name=description]").unwrap();
+    let mut article_texts = Vec::new();
+
+    for element in document.select(&meta_description_selector) {
+        article_texts.push(element.value().attr("content").unwrap().to_string());
+    }
+
+    article_texts.join(" ")
+}
+
+async fn fetch_content(url: &str) -> Result<String, String> {
+    let html = reqwest::get(url).await.unwrap().text().await.unwrap();
+    let document = Html::parse_document(&html);
+
+    let meta_description = get_meta_description(&document);
+    let main_article_content = get_main_article_content(&document);
+
+    let summary = vec![url.to_string(), meta_description, main_article_content];
+    let summary = summary.join("\n");
+
     if summary.is_empty() {
-        return Err(());
+        return Err("Could not read the content of the website".to_string());
     }
 
     Ok(summary)
