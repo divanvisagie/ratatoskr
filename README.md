@@ -1,18 +1,14 @@
 # Ratatoskr
 
-Ratatoskr is a telegram bot written in Rust with the goal creating a generic AI driven bot architecture using a "design by experiment" philosophy. It was started initially as a rewrite of [Ratatoskr](https://github.com/divanvisagie/Ratatoskr) in Rust.
+Ratatoskr is a telegram bot written in with the goal creating a generic AI driven bot architecture using a "design by experiment" philosophy. 
 
-![Rustatoskr](docs/logo-256.png)
-
-Part of this was simply for research purposes to see the difference between the memory usage of a Go and Rust implementation of the same application. The other part was to see how much of a difference the type system makes in terms of code quality and readability.
-
-Writing in Rust also enables the _potential_ make use of the advances in local AI that have been made that make use of native integration such as local tokenization which seem to only be very good in python and rust at the moment.
+![Ratatoskr](docs/logo-256.png)
 
 ## Architecture
 
 ### High level
 
-Messages from Telegram are converted to a `RequestMessages` and passed to a handler. The handler then passes the message through a series of layers that can either reject the message entirely or modify it and pass it to the next layer. The final layer is a capability selector, which selects the capability that should handle the message. The capability is then executed and a `ResponseMessage` is passed back through the layers and back to the handler which then sends the response back to our main Telegram listener.
+Messages from Telegram are converted to a `RequestMessage` and passed to a handler. The handler then passes the message through a series of layers that can either reject the message entirely or modify it and pass it to the next layer. The final layer is a capability selector, which selects the capability that should handle the message. The capability is then executed and a `ResponseMessage` is passed back through the layers and back to the handler which then sends the response back to our main Telegram listener.
 
 The listener then converts the `ResponseMessage` to a the type of response that makes most sense given the content of the `ResponseMessage`. For example if the `ResponseMessage` contains a `text` field, the listener will send a text message back to the user. If the `ResponseMessage` contains a list of options, the listener will send back a message that will cause Telagram keyboard options to be displayed to the user.
 
@@ -106,36 +102,3 @@ CC ->> U: ... Yes, Unix pipes are part of POSIX. ...
 
 ```
 
-#### Embedding Engine
-
-Currently Rustatoskr uses OpenAI's embeddings API with the `text-embedding-ada-002` model. Future plans inclide testing out local embeddings to see if this reduces overall cost or latency.
-
-## Dev Setup
-
-### Continous dev:
-
-```sh
-cargo install cargo-watch
-```
-
-### Install ollama and the correct models
-```sh
-ollama pull all-minilm
-```
-#### Windows
-
-```powershell
-$env:RUST_LOG="trace"; cargo watch -c -x run
-```
-
-#### Linux
-
-```sh
-RUST_LOG=trace cargo watch -c -x run
-```
-
-## Todo
-
-- [x] Move message embeddings to be a one off by creating an embedding layer
-- [ ] Create description embeddings on registration of a new capability, possibly long term hashed for even fewer calls to the api
-- [ ] Try find a way to do embeddings locally that doesn't crash async
