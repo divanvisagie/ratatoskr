@@ -3,21 +3,18 @@ package telegram
 import (
 	"log"
 
+	"github.com/divanvisagie/ratatoskr/internal/capabilities"
 	"github.com/divanvisagie/ratatoskr/internal/config"
-	"github.com/divanvisagie/ratatoskr/internal/config/capabilities"
-	"github.com/divanvisagie/ratatoskr/internal/config/layers"
+	"github.com/divanvisagie/ratatoskr/internal/layers"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex) {
-	for {
-		select {
-		case response := <-firstLayer.GetUpdatesChan():
-			log.Printf("Sending message to chat %d: %s\n", response.ChatId, response.Message)
-			msg := tgbotapi.NewMessage(response.ChatId, response.Message)
-			bot.Send(msg)
-		}
+	for response := range firstLayer.GetUpdatesChan() {
+		log.Printf("Sending message to chat %d: %s\n", response.ChatId, response.Message)
+		msg := tgbotapi.NewMessage(response.ChatId, response.Message)
+		bot.Send(msg)
 	}
 }
 
