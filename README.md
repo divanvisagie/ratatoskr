@@ -1,6 +1,6 @@
 # Ratatoskr
 
-Ratatoskr is a telegram bot written in with the goal creating a generic AI driven bot architecture using a "design by experiment" philosophy. 
+Ratatoskr is a Telegram bot written in Go, aiming to create a generic AI-driven bot architecture using a "design by experiment" philosophy.
 
 ![Ratatoskr](docs/logo-256.png)
 
@@ -8,97 +8,53 @@ Ratatoskr is a telegram bot written in with the goal creating a generic AI drive
 
 ### High level
 
-Messages from Telegram are converted to a `RequestMessage` and passed to a handler. The handler then passes the message through a series of layers that can either reject the message entirely or modify it and pass it to the next layer. The final layer is a capability selector, which selects the capability that should handle the message. The capability is then executed and a `ResponseMessage` is passed back through the layers and back to the handler which then sends the response back to our main Telegram listener.
-
-The listener then converts the `ResponseMessage` to a the type of response that makes most sense given the content of the `ResponseMessage`. For example if the `ResponseMessage` contains a `text` field, the listener will send a text message back to the user. If the `ResponseMessage` contains a list of options, the listener will send back a message that will cause Telagram keyboard options to be displayed to the user.
+Messages from Telegram are converted to a `RequestMessage` and passed to a series of layers, each one called a "Cortex". These Cortices can either modify the message or pass it onto the next Cortex. The final Cortex is a "Capability Selector", which selects the appropriate capability based on the message content. The selected Capability is responsible for generating a `ResponseMessage`, which is then sent back through the layers, each having the opportunity to modify or process the response further. Finally, the processed `ResponseMessage` is sent back to Telegram.
 
 ```mermaid
 graph LR
-M[Main] -- RequestMessage --> H[Handler]
-H --> L["Layers(n)"]
+M[Main] -- RequestMessage --> L[Layers aka Cortex]
 L --> CSL[Capability Selector]
-
-CSL -- "check()"--> C[Capability]
-
-CSL -- "check()" --> C2[Selected Capability]
-C2 -->CSL
-
-CSL -- "check()" --> C3[Capability]
-
-CSL -- "execute()" --> C2
-
+CSL -- Decide which Capability --> C[Selected Capability]
+C -- Generate Response --> CSL
 CSL --> L
-L --> H
-H -- ResponseMessage --> M
+L -- ResponseMessage --> M
 ```
+
+### Layers and Capabilities as Cortices
+
+In Ratatoskr, both Layers and Capabilities are implemented as Cortices. A Cortex is an entity that processes messages and provides a channel for you to subscribe to its outputs. This unified interface makes it easier to conceptualize and manage the flow of messages through the system.
 
 #### Layers
 
-By having messages pass through the layers in both directions, layers have the power to check, modify or even save responses from capabilities. This allows for things like security, caching, and logging.
+Layers are Cortices that handle operations such as security, caching, and logging. They have the power to check, modify, or even reject messages as they pass through.
 
 #### Capabilities
 
-Capabilities are the parts of the application that respond to the user. They provide an interface that allows them to implement a check function that returns a score for how well they can handle a message and an execute function that returns a response message. This allows for multiple capabilities to be registered and for the best one to be selected for each message.
+Capabilities are also Cortices, but have the special role of acting upon the user's request. They decide whether they can handle a certain request and generate appropriate responses. 
 
-Allowing the capabilites to calculate their own score allows for simple capabilities
-that, for example do an exact match on a command, to be registered alongside more complex capabilities that use machine learning to determine if they can handle a message.
+Multiple Capabilities can be registered, and the most suitable one will be selected for each message, allowing for diverse response design, from simple command matches to more complex machine learning driven reactions.
 
-```rust
-pub trait Capability {
-    async fn check(&mut self, message: &RequestMessage) -> f32;
-    async fn execute(&mut self, message: &RequestMessage) -> ResponseMessage;
-}
-```
+### Specific Implementation
 
-### Specific implementation
-
-While the high level architecture can be applied anywhere, the specific implementation in Rustatoskr makes use of a specific strategy involving an `EmbeddingLayer`.
+In the implementation of Ratatoskr, the architecture remains quite generic, but introduces a couple of specific features: the `EmbeddingLayer` and the `Memory Layer`.
 
 #### EmbeddingLayer
 
-The `EmbeddingLayer` is a layer that converts the message to a text embedding and attaches this embedding to the `RequestMessage`. This allows capabilities to make use of embeddings to to calculate a `check()` score using [cosine similarity](https://en.wikipedia.org/wiki/Cosine_similarity)(A, B) = (A ⋅ B) / (||A|| ||B||) .
+An EmbeddingLayer is a Cortex that converts the text message into a numerical embedding that represents the semantic content of the message. This embedding is used by Capabilities to calculate their scores based on how closely the embedding matches their handling capacity.
 
 ```mermaid
 graph LR
-EL[Embedding Layer] -- Get message embedding--> EE[Embedding Engine]
-
+EL[Embedding Layer] -- Get message embedding --> EE[Embedding Engine]
 CS{Capability Selector} -- "check()" --> C[Embeddings based Capability]
 C -- Check Cosine Similarity --> C
-
-
-CS -- "check()" --> C3[Simple Capability]
-
-C -- Get capability embedding --> EE
-C3 -- Simple check --> C3
-
 EL --> CS
 ```
 
 #### Memory Layer
 
-The `Memory Layer` in Rustatoskr currently only saves the last 15 messages so acts as a short term memory, when it receives a message from a user it attaches the last 15 messages to the `RequestMessage` so that capabilities can make use of this information.
+Memory Layer is another important Cortex, acting as short-term memory for the application. It remembers the last `n` messages from a user and allows Capabilities to make use of this context while generating responses.
 
-The core capability using this currently is the ChatCapability which uses this context to build up a list of messages to add to the request to give the user a more natural conversation experience.
+## Known Behaviours
 
-When the `ResponseMessage` comes back through the layers, the `MemoryLayer` saves the user message and the assistant message to the memory.
-
-#### Interesting unexpected behaviour
-
-In [one notable instance](https://github.com/divanvisagie/Rustatoskr/issues/1#issue-1718132154) the fact that the incorrect capability was chosen for a message was able to be corrected by the user, since capability selection is only done on the current message, subsequent correction message was seen by the `ChatCapability` which was then able to correct the mistake because it had access to the previous messages.
-
-```mermaid
-sequenceDiagram
-actor U as User
-participant CS as Capability Selector
-participant CC as Chat Capability
-participant DC as Debug Capability
-
-U ->> CS: Are unix pipes part of posix
-CS ->> DC: select
-DC->> U: I've sent you some debug options, you should see the buttons below.
-U ->> CS: I actually wanted the question answered
-CS ->> CC: select
-CC ->> U: ... Yes, Unix pipes are part of POSIX. ...
-
-```
+In [one notable instance](https://github.com/divanvisagie/Rustatoskr/issues/1#issue-1718132154) user interaction corrected an initially wrong capability choice. This happened because every user message triggers capability selection afresh, allowing subsequent messages to correct previous ones.
 
