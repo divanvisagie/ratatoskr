@@ -3,22 +3,25 @@ package telegram
 import (
 	"log"
 
+	"github.com/divanvisagie/ratatoskr/internal/config"
+	"github.com/divanvisagie/ratatoskr/internal/config/capabilities"
 	"github.com/divanvisagie/ratatoskr/internal/config/layers"
-	"github.com/divanvisagie/ratatoskr/pkg/openai"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
-func listenAndRespond(bot *tgbotapi.BotAPI, securityLayer layers.SecurityLayer) {
+
+func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex) {
 	for {
 		select {
-		case response := <-securityLayer.GetUpdatesChan():
-            log.Printf("Sending message to chat %d: %s\n", response.ChatId, response.Content)
-			msg := tgbotapi.NewMessage(response.ChatId, response.Content)
+		case response := <-firstLayer.GetUpdatesChan():
+			log.Printf("Sending message to chat %d: %s\n", response.ChatId, response.Message)
+			msg := tgbotapi.NewMessage(response.ChatId, response.Message)
 			bot.Send(msg)
 		}
 	}
 }
-func StartBot(token string, openaiClient *openai.Client) {
+
+func StartBot(token string, cfg *config.Config) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
@@ -27,19 +30,25 @@ func StartBot(token string, openaiClient *openai.Client) {
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
 
-	firstLayer := layers.NewSecurityLayer()
+	chat := capabilities.NewChatCapability(cfg)
+	image := capabilities.NewImageGenerationCapability(cfg)
+	caps := []types.Capability{chat, image}
 
-    go listenAndRespond(bot, *firstLayer)
+	selectionLayer := layers.NewSelectionLayer(*cfg, &caps)
+	memoryLayer := layers.NewMemoryLayer(selectionLayer)
+	securityLayer := layers.NewSecurityLayer(memoryLayer)
 
+	go listenAndRespond(bot, securityLayer)
+
+	// Listen for messages on the input channel
 	for update := range updates {
 		if update.Message != nil {
-
 			requestMessage := types.RequestMessage{
-                ChatId: update.Message.Chat.ID,
-				Content: update.Message.Text,
+				ChatId:  update.Message.Chat.ID,
+				Message: update.Message.Text,
 			}
 
-			firstLayer.SendMessage(requestMessage)
+			go securityLayer.SendMessage(requestMessage)
 
 			typing := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
 			bot.Send(typing)
