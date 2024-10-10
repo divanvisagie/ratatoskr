@@ -1,16 +1,17 @@
 package types
 
 type StoredMessage struct {
-	ChatId int64
-	Content string
+	CreatedAt int64  `json:"created_at"`
+	Content   string `json:"content"`
 }
 
 type ResponseMessage struct {
-	ChatId int64
+	ChatId  int64
 	Message string
 }
 
 type RequestMessage struct {
-	ChatId int64
-	Message string 
+	UserId  int64
+	ChatId  int64
+	Message string
 }

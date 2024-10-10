@@ -2,7 +2,6 @@ package openai
 
 import (
 	"context"
-	"log"
 
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -13,7 +12,7 @@ type ChatClient struct {
 }
 
 func NewClient(apiKey string) *ChatClient {
-	
+
 	client := openai.NewClient(apiKey)
 
 	systemPrompt := "You are Ratatoskr, a telegram bot written in golang, answer users questions in telegram compatible markdown"
@@ -21,7 +20,6 @@ func NewClient(apiKey string) *ChatClient {
 }
 
 func (c *ChatClient) SetSystemPrompt(prompt string) {
-	log.Println("Setting system prompt to: ", prompt)
 	c.systemPrompt = prompt
 }
 

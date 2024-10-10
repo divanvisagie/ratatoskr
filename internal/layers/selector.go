@@ -2,9 +2,9 @@ package layers
 
 import (
 	"context"
-	"log"
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
+	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 	openai "github.com/sashabaranov/go-openai"
 )
@@ -13,6 +13,7 @@ type SelectionLayer struct {
 	out          chan types.ResponseMessage
 	capabilities *[]types.Capability
 	cfg          config.Config
+	logger       *logger.Logger
 }
 
 func NewSelectionLayer(cfg config.Config, caps *[]types.Capability) *SelectionLayer {
@@ -20,6 +21,7 @@ func NewSelectionLayer(cfg config.Config, caps *[]types.Capability) *SelectionLa
 		out:          make(chan types.ResponseMessage),
 		capabilities: caps,
 		cfg:          cfg,
+		logger:       logger.NewLogger("SelectionLayer"),
 	}
 	return layer
 }
@@ -55,17 +57,19 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capa
 	// Call the OpenAI API to select the appropriate function
 	resp, err := client.CreateChatCompletion(context.Background(), req)
 	if err != nil {
-		log.Printf("Error calling OpenAI: %v", err)
+		s.logger.Error("Error calling OpenAI", err)
 		return nil, err
 	}
 
+	if len(resp.Choices) == 0 || len(resp.Choices[0].Message.ToolCalls) == 0 {
+		s.logger.Warn("No choices returned by OpenAI, defaulting to first capability")
+		return &(*s.capabilities)[0], nil // Fallback to default if no choices are returned
+	}
 
 	// Parse the selected function (capability) from the response
 	selectedFunction := resp.Choices[0].Message.ToolCalls[0].Function.Name
 
-	log.Printf("OpenAI response: %v", selectedFunction)
-	
-	log.Printf("Selected capability: %s", selectedFunction)
+	s.logger.Info("Selected capability", selectedFunction)
 
 	// Find and return the corresponding capability from the list
 	for _, cap := range *s.capabilities {
@@ -78,12 +82,12 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capa
 }
 
 func (s *SelectionLayer) SendMessage(msg types.RequestMessage) {
-	log.Println("Selection Layer received message: ", msg)
+	s.logger.Info("Received message", msg)
 
 	// Select the appropriate capability using OpenAI's function-calling API
 	cap, err := s.selectCapability(msg)
 	if err != nil {
-		log.Printf("Error selecting capability: %v", err)
+		s.logger.Error("Error selecting capability", err)
 		response := types.ResponseMessage{
 			ChatId:  msg.ChatId,
 			Message: "I'm sorry, I'm having trouble processing your request",
@@ -93,11 +97,9 @@ func (s *SelectionLayer) SendMessage(msg types.RequestMessage) {
 	}
 
 	if cap == nil {
-		log.Println("No capability selected, defaulting to first capability")
+		s.logger.Warn("No capability selected, defaulting to first capability")
 		cap = &(*s.capabilities)[0] // Fallback to default if OpenAI didn't select one
 	}
-
-	log.Println("Using capability: ", cap)
 
 	// Now we do the work
 	go types.ListenAndRespond(*cap, s.out)

@@ -2,9 +2,9 @@ package capabilities
 
 import (
 	_ "embed"
-	"log"
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
+	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/openai"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 
@@ -12,9 +12,10 @@ import (
 )
 
 type ChatCapability struct {
-	cfg  *config.Config
-	out  chan types.ResponseMessage
-	done chan bool
+	cfg    *config.Config
+	out    chan types.ResponseMessage
+	done   chan bool
+	logger *logger.Logger
 }
 
 //go:embed prompt.txt
@@ -23,11 +24,11 @@ var systemPrompt string
 // create constructor function
 func NewChatCapability(cfg *config.Config) *ChatCapability {
 	// load prompt string from file prompt.txt and include at build time
-
 	instance := &ChatCapability{
-		cfg:  cfg,
-		out:  make(chan types.ResponseMessage),
-		done: make(chan bool),
+		cfg:    cfg,
+		out:    make(chan types.ResponseMessage),
+		done:   make(chan bool),
+		logger: logger.NewLogger("ChatCapability"),
 	}
 
 	go types.ListenAndRespond(instance, instance.out)
@@ -35,9 +36,8 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 	return instance
 }
 
-
 func (c *ChatCapability) SendMessage(msg types.RequestMessage) {
-	log.Println("Chat Capability: ", msg)
+	c.logger.Info("Sending message to chat capability", msg)
 	client := openai.NewClient(c.cfg.OpenAIKey)
 	client.SetSystemPrompt(systemPrompt)
 	response, err := client.GetCompletion(msg.Message)
@@ -67,13 +67,13 @@ func (c *ChatCapability) Stop() {
 	c.done <- true
 }
 
-func (c *ChatCapability) Describe() o.Tool{
+func (c *ChatCapability) Describe() o.Tool {
 	fd := o.FunctionDefinition{
-		Name: "ChatCapability",
-	    Description: "General chat capability that sends responses from gpt-4o",
+		Name:        "ChatCapability",
+		Description: "General chat capability that sends responses from gpt-4o",
 	}
 	return o.Tool{
-		Type: o.ToolTypeFunction,
+		Type:     o.ToolTypeFunction,
 		Function: &fd,
 	}
 }

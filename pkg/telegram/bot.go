@@ -6,19 +6,21 @@ import (
 	"github.com/divanvisagie/ratatoskr/internal/capabilities"
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/layers"
+	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex) {
+func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *logger.Logger) {
 	for response := range firstLayer.GetUpdatesChan() {
-		log.Printf("Sending message to chat %d: %s\n", response.ChatId, response.Message)
+		logger.Info("Sending message to chat", response)
 		msg := tgbotapi.NewMessage(response.ChatId, response.Message)
 		bot.Send(msg)
 	}
 }
 
 func StartBot(token string, cfg *config.Config) {
+	contextLogger := logger.NewLogger("TelegramBot")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
@@ -35,12 +37,13 @@ func StartBot(token string, cfg *config.Config) {
 	memoryLayer := layers.NewMemoryLayer(selectionLayer)
 	securityLayer := layers.NewSecurityLayer(memoryLayer)
 
-	go listenAndRespond(bot, securityLayer)
+	go listenAndRespond(bot, securityLayer, contextLogger)
 
 	// Listen for messages on the input channel
 	for update := range updates {
 		if update.Message != nil {
 			requestMessage := types.RequestMessage{
+				UserId:  update.Message.From.ID,
 				ChatId:  update.Message.Chat.ID,
 				Message: update.Message.Text,
 			}
