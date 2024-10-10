@@ -14,4 +14,5 @@ type RequestMessage struct {
 	UserId  int64
 	ChatId  int64
 	Message string
+	History []StoredMessage
 }

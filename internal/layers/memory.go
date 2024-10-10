@@ -59,8 +59,13 @@ func (m *MemoryLayer) SendMessage(message types.RequestMessage) {
 		return
 	}
 
+
 	partitionKey := fmt.Sprintf("user#%d", message.UserId)
 	sortKey := fmt.Sprintf("message#%d#%d", message.ChatId, now)
+
+	history := m.GetAttributes(partitionKey, fmt.Sprintf("message#%d", message.ChatId))
+	message.History = history
+
 	_, err = m.db.Exec("INSERT INTO documents (partitionKey, sortKey, attributes) VALUES (?, ?, ?)", partitionKey, sortKey, string(attributesJSON))
 	if err != nil {
 		m.logger.Error("Failed to insert into SQLite:", err)
@@ -76,20 +81,22 @@ func (m *MemoryLayer) GetUpdatesChan() chan types.ResponseMessage {
 	return m.out
 }
 
-func (m *MemoryLayer) GetAttributes(key string) []string {
+func (m *MemoryLayer) GetAttributes(partitionKey string, sortKey string) []types.StoredMessage {
 	var attributesJSON string
-	err := m.db.QueryRow("SELECT attributes FROM documents WHERE partitionKey = ?", key).Scan(&attributesJSON)
+	
+	// partial match on the sortkey as in a startswith kind of approach
+	err := m.db.QueryRow("SELECT attributes FROM documents WHERE partitionKey = ? AND sortKey LIKE ?", partitionKey, sortKey+"%").Scan(&attributesJSON)
 	if err != nil {
 		m.logger.Error("Failed to fetch from SQLite:", err)
 		return nil
 	}
 
-	var choices []string
-	err = json.Unmarshal([]byte(attributesJSON), &choices)
+	var storedMessages []types.StoredMessage
+	err = json.Unmarshal([]byte(attributesJSON), &storedMessages)
 	if err != nil {
 		m.logger.Error("Failed to unmarshal JSON:", err)
 		return nil
 	}
 
-	return choices
+	return storedMessages
 }
