@@ -53,7 +53,7 @@ func (m *MemoryLayer) SendMessage(message types.RequestMessage) {
 	partitionKey := fmt.Sprintf("user#%d", message.UserId)
 	sortKey := fmt.Sprintf("message#%d#%d", message.ChatId, now)
 
-	history, err := m.store.GetItems(partitionKey, fmt.Sprintf("message#%d", message.ChatId))
+	history, err := m.store.GetStoredMessages(partitionKey, fmt.Sprintf("message#%d", message.ChatId))
 	if err != nil {
 		m.logger.Error("Failed to fetch history from memory layer", err)
 	}

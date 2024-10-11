@@ -13,9 +13,7 @@ import (
 
 func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *logger.Logger) {
 	for response := range firstLayer.GetUpdatesChan() {
-		// if response.Data is not nil, send data as image
 		if response.Data != nil {
-			// data is []byte, we need to convert it to tgbotapi.FileBytes
 			file := tgbotapi.FileBytes{
 				Name:  "image.jpg",
 				Bytes: response.Data,
@@ -53,10 +51,21 @@ func StartBot(token string, cfg *config.Config) {
 	// Listen for messages on the input channel
 	for update := range updates {
 		if update.Message != nil {
+			au := types.AuthUser{}
+
+			if update.Message.Chat.IsGroup() {
+				au.TelegramUserId = update.Message.Chat.ID
+				au.ChatName = update.Message.Chat.Title
+			} else {
+				au.TelegramUserId = update.Message.From.ID
+				au.ChatName = update.Message.From.UserName
+			}
+
 			requestMessage := types.RequestMessage{
-				UserId:  update.Message.From.ID,
-				ChatId:  update.Message.Chat.ID,
-				Message: update.Message.Text,
+				UserId:   update.Message.From.ID,
+				ChatId:   update.Message.Chat.ID,
+				Message:  update.Message.Text,
+				AuthUser: au,
 			}
 
 			go securityLayer.SendMessage(requestMessage)

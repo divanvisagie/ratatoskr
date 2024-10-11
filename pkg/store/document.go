@@ -9,11 +9,23 @@ import (
 	_ "modernc.org/sqlite" // Import the SQLite driver
 )
 
-/*
-*
+type Role string
 
-	Custom Client for a Dynamo like Document Store
-	using sqlite as a backing storage mechanism
+const (
+	Admin    Role = "admin"
+	Standard Role = "standard"
+	Owner    Role = "owner"
+)
+
+type User struct {
+	TelegramUserId int
+	Username       string
+	Role           Role
+}
+
+/*
+Custom Client for a Dynamo like Document Store
+using sqlite as a backing storage mechanism
 */
 type DocumentStore struct {
 	db     *sql.DB
@@ -39,22 +51,65 @@ func NewDocumentStore() *DocumentStore {
 		return nil
 	}
 
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		telegramUserId INTEGER,
+		username TEXT,
+		role TEXT
+	)`)
+	if err != nil {
+		logger.Error("Failed to create users table:", err)
+		return nil
+	}
+
 	return &DocumentStore{
 		db:     db,
 		logger: logger,
 	}
 }
 
-func (d *DocumentStore) GetItems(partitionKey string, sortKey string) ([]types.StoredMessage, error) {
-	var results []types.StoredMessage
+func (d *DocumentStore) GetUserByTelegramId(telegramUserId int64) (*User, error) {
+	row := d.db.QueryRow("SELECT telegramUserId, username, role FROM users WHERE telegramUserId = ?", telegramUserId)
+	var user User
+	err := row.Scan(&user.TelegramUserId, &user.Username, &user.Role)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		d.logger.Error("Failed to fetch user from SQLite:", err)
+		return nil, err
+	}
+	return &user, nil
+}
 
-	rows, err := d.db.Query("SELECT attributes FROM documents WHERE partitionKey = ? AND sortKey LIKE ?", partitionKey, sortKey+"%")
+func (d *DocumentStore) GetUserByTelegramUsername(username string) (*User, error) {
+	row := d.db.QueryRow("SELECT telegramUserId, username, role FROM users WHERE username = ?", username)
+	var user User
+	var telegramUserId sql.NullInt64
+	err := row.Scan(&telegramUserId, &user.Username, &user.Role)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		d.logger.Error("Failed to fetch user from SQLite:", err)
+		return nil, err
+	}
+
+	if telegramUserId.Valid {
+		user.TelegramUserId = int(telegramUserId.Int64)
+	} else {
+		user.TelegramUserId = 0 // or any default value you prefer
+	}
+
+	return &user, nil
+}
+
+func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) ([]types.StoredMessage, error) {
+	rows, err := d.fetchItems(partitionKey, sortKey)
 	if err != nil {
-		d.logger.Error("Failed to fetch from SQLite:", err)
 		return nil, err
 	}
 	defer rows.Close()
 
+	var results []types.StoredMessage
 	for rows.Next() {
 		var attributesJSON string
 		if err := rows.Scan(&attributesJSON); err != nil {
@@ -77,6 +132,15 @@ func (d *DocumentStore) GetItems(partitionKey string, sortKey string) ([]types.S
 	}
 
 	return results, nil
+}
+
+func (d *DocumentStore) fetchItems(partitionKey string, sortKey string) (*sql.Rows, error) {
+	rows, err := d.db.Query("SELECT attributes FROM documents WHERE partitionKey = ? AND sortKey LIKE ?", partitionKey, sortKey+"%")
+	if err != nil {
+		d.logger.Error("Failed to fetch from SQLite:", err)
+		return nil, err
+	}
+	return rows, nil
 }
 
 func (d *DocumentStore) SaveItem(partitionKey string, sortKey string, item interface{}) {

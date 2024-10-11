@@ -15,9 +15,19 @@ type ResponseMessage struct {
 	Data []byte
 }
 
+/*
+A chat can be either a group or a user, so we use authuser to attach to each
+request message for the purpose of authentication
+*/
+type AuthUser struct {
+	TelegramUserId int64
+	ChatName       string
+}
+
 type RequestMessage struct {
-	UserId  int64
-	ChatId  int64
-	Message string
-	History []StoredMessage
+	UserId   int64
+	ChatId   int64
+	Message  string
+	History  []StoredMessage
+	AuthUser AuthUser
 }
