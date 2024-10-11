@@ -54,7 +54,22 @@ EL --> CS
 
 Memory Layer is another important Cortex, acting as short-term memory for the application. It remembers the last `n` messages from a user and allows Capabilities to make use of this context while generating responses.
 
-## Known Behaviours
+## Unexpected good Behaviours
 
-In [one notable instance](https://github.com/divanvisagie/Rustatoskr/issues/1#issue-1718132154) user interaction corrected an initially wrong capability choice. This happened because every user message triggers capability selection afresh, allowing subsequent messages to correct previous ones.
+In [one notable instance](https://github.com/divanvisagie/Rustatoskr/issues/1#issue-1718132154) the fact that the incorrect capability was chosen for a message was able to be corrected by the user, since capability selection is only done on the current message, subsequent correction message was seen by the `ChatCapability` which was then able to correct the mistake because it had access to the previous messages.
+
+```mermaid
+sequenceDiagram
+actor U as User
+participant CS as Capability Selector
+participant CC as Chat Capability
+participant DC as Debug Capability
+
+U ->> CS: Are unix pipes part of posix
+CS ->> DC: select
+DC->> U: I've sent you some debug options, you should see the buttons below.
+U ->> CS: I actually wanted the question answered
+CS ->> CC: select
+CC ->> U: ... Yes, Unix pipes are part of POSIX. ...
+```
 
