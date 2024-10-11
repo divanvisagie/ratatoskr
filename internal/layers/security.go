@@ -44,7 +44,7 @@ func (s *SecurityLayer) SendMessage(message types.RequestMessage) {
 	}
 
 	if user == nil {
-		s.logger.Info("User not found in memory layer")
+		s.logger.Info("User not found by id, trying username")
 		user, err = s.store.GetUserByTelegramUsername(message.AuthUser.ChatName)
 		if err != nil {
 			s.logger.Error("Failed to fetch user from memory layer", err)
@@ -56,6 +56,17 @@ func (s *SecurityLayer) SendMessage(message types.RequestMessage) {
 		if user == nil {
 			s.logger.Info("User not found in memory layer")
 			response.Message = "User is not authorised to use this bot, contact @DivanVisagie"
+			s.out <- response
+			return
+		}
+
+		// Since the user was found by username, update the user's telegram id
+		user.TelegramUserId = message.AuthUser.TelegramUserId
+
+		err := s.store.SaveUser(*user)
+		if err != nil {
+			s.logger.Error("Failed to save user to memory layer", err)
+			response.Message = "There was an error while trying to complete your signup"
 			s.out <- response
 			return
 		}

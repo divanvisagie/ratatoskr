@@ -18,7 +18,8 @@ const (
 )
 
 type User struct {
-	TelegramUserId int
+	Id             int64
+	TelegramUserId int64
 	Username       string
 	Role           Role
 }
@@ -69,9 +70,9 @@ func NewDocumentStore() *DocumentStore {
 }
 
 func (d *DocumentStore) GetUserByTelegramId(telegramUserId int64) (*User, error) {
-	row := d.db.QueryRow("SELECT telegramUserId, username, role FROM users WHERE telegramUserId = ?", telegramUserId)
+	row := d.db.QueryRow("SELECT id, telegramUserId, username, role FROM users WHERE telegramUserId = ?", telegramUserId)
 	var user User
-	err := row.Scan(&user.TelegramUserId, &user.Username, &user.Role)
+	err := row.Scan(&user.Id, &user.TelegramUserId, &user.Username, &user.Role)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -82,10 +83,10 @@ func (d *DocumentStore) GetUserByTelegramId(telegramUserId int64) (*User, error)
 }
 
 func (d *DocumentStore) GetUserByTelegramUsername(username string) (*User, error) {
-	row := d.db.QueryRow("SELECT telegramUserId, username, role FROM users WHERE username = ?", username)
+	row := d.db.QueryRow("SELECT id, telegramUserId, username, role FROM users WHERE username = ?", username)
 	var user User
 	var telegramUserId sql.NullInt64
-	err := row.Scan(&telegramUserId, &user.Username, &user.Role)
+	err := row.Scan(&user.Id, &telegramUserId, &user.Username, &user.Role)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -94,12 +95,29 @@ func (d *DocumentStore) GetUserByTelegramUsername(username string) (*User, error
 	}
 
 	if telegramUserId.Valid {
-		user.TelegramUserId = int(telegramUserId.Int64)
+		user.TelegramUserId = telegramUserId.Int64
 	} else {
 		user.TelegramUserId = 0 // or any default value you prefer
 	}
 
 	return &user, nil
+}
+
+func (d *DocumentStore) SaveUser(user User) error {
+	if user.Id == 0 {
+		_, err := d.db.Exec("INSERT INTO users (telegramUserId, username, role) VALUES (?, ?, ?)", user.TelegramUserId, user.Username, user.Role)
+		if err != nil {
+			d.logger.Error("Failed to insert into SQLite:", err)
+			return err
+		}
+	} else {
+		_, err := d.db.Exec("UPDATE users SET telegramUserId = ?, username = ?, role = ? WHERE id = ?", user.TelegramUserId, user.Username, user.Role, user.Id)
+		if err != nil {
+			d.logger.Error("Failed to update SQLite:", err)
+			return err
+		}
+	}
+	return nil
 }
 
 func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) ([]types.StoredMessage, error) {
