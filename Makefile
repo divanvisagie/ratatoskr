@@ -43,3 +43,13 @@ pushpi:
 	rsync -av --progress $(LINUX_ARM64) $(PI):~/src/$(APP_NAME)/bin
 	rsync -av --progress scripts $(PI):~/src/$(APP_NAME)
 	rsync -av --progress Makefile $(PI):~/src/$(APP_NAME)
+
+install:
+	# stop the service if it already exists
+	systemctl stop ratatoskr || true
+	systemctl disable ratatoskr || true
+	# delete the old service file if it exists
+	rm /etc/systemd/system/ratatoskr.service || true
+	cp scripts/ratatoskr.service /etc/systemd/system/
+	systemctl enable ratatoskr
+	systemctl start ratatoskr
