@@ -2,36 +2,49 @@ package openai
 
 import (
 	"context"
+	"log"
 
+	"github.com/divanvisagie/ratatoskr/pkg/types"
 	openai "github.com/sashabaranov/go-openai"
 )
 
 type ChatClient struct {
-	api          *openai.Client
-	systemPrompt string
+	api     *openai.Client
+	context *[]openai.ChatCompletionMessage
 }
 
 func NewClient(apiKey string) *ChatClient {
 
 	client := openai.NewClient(apiKey)
 
-	systemPrompt := "You are Ratatoskr, a telegram bot written in golang, answer users questions in telegram compatible markdown"
-	return &ChatClient{api: client, systemPrompt: systemPrompt}
+	context := []openai.ChatCompletionMessage{}
+	return &ChatClient{api: client, context: &context}
 }
 
 func (c *ChatClient) SetSystemPrompt(prompt string) {
-	c.systemPrompt = prompt
+	c.context = &[]openai.ChatCompletionMessage{
+		{Role: "system", Content: prompt},
+	}
 }
 
-func (c *ChatClient) GetCompletion(prompt string) (string, error) {
+func (c *ChatClient) AddMessage(role, content string) {
+	*c.context = append(*c.context, openai.ChatCompletionMessage{Role: role, Content: content})
+}
+
+func (c *ChatClient) AddStoredMessages(messages []types.StoredMessage) {
+	for _, message := range messages {
+		c.AddMessage(message.Role, message.Content)
+	}
+}
+
+func (c *ChatClient) GetCompletion() (string, error) {
 	req := openai.ChatCompletionRequest{
-		Model: "gpt-4o",
-		Messages: []openai.ChatCompletionMessage{
-			{Role: "system", Content: c.systemPrompt},
-			{Role: "user", Content: prompt},
-		},
+		Model:     "gpt-4o",
+		Messages:  *c.context,
 		MaxTokens: 100,
 	}
+	log.Println(req)
+
 	resp, err := c.api.CreateChatCompletion(context.Background(), req)
 	if err != nil {
 		return "", err

@@ -32,6 +32,7 @@ func NewImageGenerationCapability(cfg *config.Config) *ImageGenerationCapability
 
 func (i *ImageGenerationCapability) SendMessage(msg types.RequestMessage) {
 	i.out <- types.ResponseMessage{
+		UserId:  msg.UserId,
 		ChatId:  msg.ChatId,
 		Message: "I can't generate images yet",
 	}
@@ -41,14 +42,14 @@ func (i *ImageGenerationCapability) GetUpdatesChan() chan types.ResponseMessage 
 	return i.out
 }
 
-func (i *ImageGenerationCapability) Describe() o.Tool{
+func (i *ImageGenerationCapability) Describe() o.Tool {
 	fd := o.FunctionDefinition{
 		Name:        "ImageGenerationCapability",
 		Description: "Can generate an image with dall-e if the user asks for it",
 	}
 
 	return o.Tool{
-		Type: o.ToolTypeFunction,
+		Type:     o.ToolTypeFunction,
 		Function: &fd,
 	}
 }

@@ -3,8 +3,8 @@ Description=Ratatoskr Service
 
 [Service]
 EnvironmentFile=/home/divanvisagie/src/ratatoskr/.env
-ExecStart=/home/divanvisagie/src/ratatoskr/bin/ratatoskr
-WorkingDirectory=/home/divanvisagie/src/ratatoskr/bin/
+ExecStart=/home/divanvisagie/src/ratatoskr/bin/linux-arm64/ratatoskr
+WorkingDirectory=/home/divanvisagie/src/ratatoskr/bin/linux-arm64/
 Restart=always
 User=divanvisagie
 Group=divanvisagie

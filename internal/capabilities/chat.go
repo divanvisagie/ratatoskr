@@ -40,15 +40,19 @@ func (c *ChatCapability) SendMessage(msg types.RequestMessage) {
 	c.logger.Info("Sending message to chat capability", msg)
 	client := openai.NewClient(c.cfg.OpenAIKey)
 	client.SetSystemPrompt(systemPrompt)
-	response, err := client.GetCompletion(msg.Message)
+	client.AddStoredMessages(msg.History)
+	client.AddMessage("user", msg.Message)
+	response, err := client.GetCompletion()
 
 	if err != nil {
 		c.out <- types.ResponseMessage{
+			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
 			Message: "I'm sorry, I'm having trouble processing your request",
 		}
 	} else {
 		c.out <- types.ResponseMessage{
+			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
 			Message: response,
 		}
