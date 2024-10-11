@@ -13,9 +13,20 @@ import (
 
 func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *logger.Logger) {
 	for response := range firstLayer.GetUpdatesChan() {
-		logger.Info("Sending message to chat", response)
-		msg := tgbotapi.NewMessage(response.ChatId, response.Message)
-		bot.Send(msg)
+		// if response.Data is not nil, send data as image
+		if response.Data != nil {
+			// data is []byte, we need to convert it to tgbotapi.FileBytes
+			file := tgbotapi.FileBytes{
+				Name:  "image.jpg",
+				Bytes: response.Data,
+			}
+			photo := tgbotapi.NewPhoto(response.ChatId, file)
+			bot.Send(photo)
+		} else {
+			logger.Info("Sending message to chat", response)
+			msg := tgbotapi.NewMessage(response.ChatId, response.Message)
+			bot.Send(msg)
+		}
 	}
 }
 

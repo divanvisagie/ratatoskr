@@ -13,7 +13,7 @@ type ChatClient struct {
 	context *[]openai.ChatCompletionMessage
 }
 
-func NewClient(apiKey string) *ChatClient {
+func NewChatClient(apiKey string) *ChatClient {
 
 	client := openai.NewClient(apiKey)
 

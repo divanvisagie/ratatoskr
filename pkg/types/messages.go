@@ -10,6 +10,9 @@ type ResponseMessage struct {
 	UserId  int64
 	ChatId  int64
 	Message string
+
+	// If the response is a file, it will be sent to the user as a document and the text will be used as the filename
+	Data []byte
 }
 
 type RequestMessage struct {
