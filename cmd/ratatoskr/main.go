@@ -22,6 +22,7 @@ func initialSetup(cfg *config.Config) {
 
 		usr := store.User{
 			Username: cfg.Owner,
+			Role:     "owner",
 		}
 
 		l.Info("Saving user", usr)
