@@ -38,10 +38,11 @@ func StartBot(token string, cfg *config.Config) {
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
 
+	invite := capabilities.NewInvitationCapability()
 	test := capabilities.NewTestCapability()
 	chat := capabilities.NewChatCapability(cfg)
 	image := capabilities.NewImageGenerationCapability(cfg)
-	caps := []types.Capability{chat, image, test}
+	caps := []types.Capability{chat, image, test, invite}
 
 	selectionLayer := layers.NewSelectionLayer(*cfg, &caps)
 	memoryLayer := layers.NewMemoryLayer(selectionLayer)
