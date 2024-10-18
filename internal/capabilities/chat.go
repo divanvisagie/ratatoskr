@@ -81,3 +81,7 @@ func (c *ChatCapability) Describe() o.Tool {
 		Function: &fd,
 	}
 }
+
+func (c *ChatCapability) Check(inputMessage types.RequestMessage) float64 {
+	return 0.0
+}

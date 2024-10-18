@@ -23,6 +23,7 @@ selection
 type Capability interface {
 	Cortex
 	Describe() openai.Tool
+	Check(inputMessage RequestMessage) float64
 }
 
 /*

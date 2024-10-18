@@ -111,3 +111,7 @@ func (i *ImageGenerationCapability) Describe() o.Tool {
 		Function: &fd,
 	}
 }
+
+func (c *ImageGenerationCapability) Check(inputMessage types.RequestMessage) float64 {
+	return 0.0
+}

@@ -32,6 +32,16 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capa
 
 	tools := []openai.Tool{}
 	for _, cap := range *s.capabilities {
+
+		/*
+			if any capabilities return 1 for a check that means they should override
+			any AI selected capabilities	
+		*/
+		checkValue := cap.Check(msg)
+		if checkValue == 1 {
+			return &cap, nil
+		}
+
 		tools = append(tools, cap.Describe())
 	}
 
