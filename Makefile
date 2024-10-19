@@ -40,9 +40,9 @@ help:
 
 pushpi:
 	ssh $(PI) "mkdir -p ~/src/"
-	rsync -av --progress $(LINUX_ARM64) $(PI):~/src/$(APP_NAME)_2/bin
-	rsync -av --progress scripts $(PI):~/src/$(APP_NAME)_2
-	rsync -av --progress Makefile $(PI):~/src/$(APP_NAME)_2
+	rsync -av --progress $(LINUX_ARM64) $(PI):~/src/$(APP_NAME)/bin
+	rsync -av --progress scripts $(PI):~/src/$(APP_NAME)
+	rsync -av --progress Makefile $(PI):~/src/$(APP_NAME)
 
 install:
 	# stop the service if it already exists
