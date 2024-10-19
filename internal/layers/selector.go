@@ -2,7 +2,6 @@ package layers
 
 import (
 	"context"
-	"strings"
 
 	"github.com/divanvisagie/ratatoskr/internal/capabilities"
 	"github.com/divanvisagie/ratatoskr/internal/config"
@@ -105,12 +104,6 @@ func (s *SelectionLayer) Tell(msg types.RequestMessage) {
 	invite := capabilities.NewInvitationCapability()
 	if msg.Role == store.Owner {
 		caps = append(caps, invite)
-	}
-
-	// Ignore group chat messages unless the bot's username is mentioned
-	if msg.AuthUser.TelegramUserId < 0 && !strings.Contains(msg.Message, s.cfg.BotUsername) {
-		s.logger.Info("Ignoring group chat message")
-		return
 	}
 
 	s.busyChannel <- types.BusyIndicatorMessage{ChatId: msg.ChatId}

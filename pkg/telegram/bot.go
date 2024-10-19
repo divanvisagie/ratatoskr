@@ -49,7 +49,7 @@ func StartBot(token string, cfg *config.Config) {
 
 	selectionLayer := layers.NewSelectionLayer(*cfg, busyChannel)
 	memoryLayer := layers.NewMemoryLayer(selectionLayer)
-	securityLayer := layers.NewSecurityLayer(memoryLayer)
+	securityLayer := layers.NewSecurityLayer(memoryLayer, *cfg)
 
 	go listenAndRespond(bot, securityLayer, logger)
 	go listenToBusy(busyChannel, bot, logger)

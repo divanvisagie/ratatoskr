@@ -1,6 +1,9 @@
 package layers
 
 import (
+	"strings"
+
+	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/store"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
@@ -10,13 +13,15 @@ type SecurityLayer struct {
 	out    chan types.ResponseMessage
 	next   types.Cortex
 	logger *logger.Logger
+	cfg    config.Config
 	store  *store.DocumentStore
 }
 
-func NewSecurityLayer(next types.Cortex) *SecurityLayer {
+func NewSecurityLayer(next types.Cortex, cfg config.Config) *SecurityLayer {
 	layer := &SecurityLayer{
 		out:    make(chan types.ResponseMessage),
 		next:   next,
+		cfg:    cfg,
 		logger: logger.NewLogger("SecurityLayer"),
 		store:  store.NewDocumentStore(),
 	}
@@ -32,6 +37,12 @@ func (s *SecurityLayer) Tell(message types.RequestMessage) {
 	response := types.ResponseMessage{
 		ChatId: message.ChatId,
 		UserId: message.UserId,
+	}
+
+	// Ignore group chat messages unless the bot's username is mentioned
+	if message.AuthUser.TelegramUserId < 0 && !strings.Contains(message.Message, s.cfg.BotUsername) {
+		s.logger.Info("Ignoring group chat message")
+		return
 	}
 
 	// Check if the user is authorised
