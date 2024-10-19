@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
@@ -71,7 +72,9 @@ func StartBot(token string, cfg *config.Config) {
 				UserId:   update.Message.From.ID,
 				ChatId:   update.Message.Chat.ID,
 				Message:  update.Message.Text,
+				Username: update.Message.From.UserName,
 				AuthUser: au,
+				Fullname: fmt.Sprintf("%s %s", update.Message.From.FirstName, update.Message.From.LastName),
 			}
 
 			go securityLayer.Tell(requestMessage)

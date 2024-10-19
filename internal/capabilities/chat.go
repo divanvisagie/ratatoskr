@@ -2,6 +2,7 @@ package capabilities
 
 import (
 	_ "embed"
+	"fmt"
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
@@ -39,9 +40,15 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 func (c *ChatCapability) Tell(msg types.RequestMessage) {
 	c.logger.Info("Sending message to chat capability", msg)
 	client := openai.NewChatClient(c.cfg.OpenAIKey)
+
+	if msg.AuthUser.TelegramUserId < 0 {
+		systemPrompt = fmt.Sprintf("%s\nFYI: You are in a group chat.", systemPrompt)
+	}
+	message := fmt.Sprintf("@%s (%s): %s", msg.Username, msg.Fullname, msg.Message)
+
 	client.SetSystemPrompt(systemPrompt)
 	client.AddStoredMessages(msg.History)
-	client.AddMessage("user", msg.Message)
+	client.AddMessage("user", message)
 	response, err := client.GetCompletion()
 
 	if err != nil {

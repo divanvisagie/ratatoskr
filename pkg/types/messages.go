@@ -33,6 +33,11 @@ type RequestMessage struct {
 	ChatId   int64
 	Message  string
 	History  []StoredMessage
+	Username string
+	Fullname string
+
+	// Used for authenticating whether or not
+	// the user is allowed to use the bot
 	AuthUser AuthUser
 	Role     Role
 }
