@@ -54,7 +54,7 @@ func (s *SecurityLayer) Tell(message types.RequestMessage) {
 		}
 
 		if user == nil {
-			s.logger.Info("User not found in memory layer")
+			s.logger.Warn("This is not a valid user")
 			response.Message = "User is not authorised to use this bot, contact @DivanVisagie"
 			s.out <- response
 			return
@@ -71,6 +71,8 @@ func (s *SecurityLayer) Tell(message types.RequestMessage) {
 			return
 		}
 	}
+
+	s.logger.Info("User found", user)
 
 	message.Role = user.Role
 

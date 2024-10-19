@@ -59,7 +59,7 @@ func StartBot(token string, cfg *config.Config) {
 		if update.Message != nil {
 			au := types.AuthUser{}
 
-			if update.Message.Chat.IsGroup() {
+			if update.Message.Chat.ID < 0 {
 				au.TelegramUserId = update.Message.Chat.ID
 				au.ChatName = update.Message.Chat.Title
 			} else {
