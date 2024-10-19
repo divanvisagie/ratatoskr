@@ -36,7 +36,7 @@ func NewImageGenerationCapability(cfg *config.Config) *ImageGenerationCapability
 	return instance
 }
 
-func (i *ImageGenerationCapability) SendMessage(msg types.RequestMessage) {
+func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 	client := o.NewClient(i.cfg.OpenAIKey)
 
 	response, err := client.CreateImage(context.Background(), o.ImageRequest{

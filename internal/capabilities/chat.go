@@ -36,7 +36,7 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 	return instance
 }
 
-func (c *ChatCapability) SendMessage(msg types.RequestMessage) {
+func (c *ChatCapability) Tell(msg types.RequestMessage) {
 	c.logger.Info("Sending message to chat capability", msg)
 	client := openai.NewChatClient(c.cfg.OpenAIKey)
 	client.SetSystemPrompt(systemPrompt)

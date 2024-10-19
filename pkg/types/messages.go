@@ -30,4 +30,5 @@ type RequestMessage struct {
 	Message  string
 	History  []StoredMessage
 	AuthUser AuthUser
+	Role     Role
 }

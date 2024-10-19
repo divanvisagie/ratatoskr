@@ -9,19 +9,18 @@ import (
 	_ "modernc.org/sqlite" // Import the SQLite driver
 )
 
-type Role string
 
 const (
-	Admin    Role = "admin"
-	Standard Role = "standard"
-	Owner    Role = "owner"
+	Admin    types.Role = "admin"
+	Standard types.Role = "standard"
+	Owner    types.Role = "owner"
 )
 
 type User struct {
 	Id             int64
 	TelegramUserId int64
 	Username       string
-	Role           Role
+	Role           types.Role
 }
 
 /*
@@ -121,7 +120,8 @@ func (d *DocumentStore) SaveUser(user User) error {
 }
 
 func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) ([]types.StoredMessage, error) {
-	rows, err := d.fetchItems(partitionKey, sortKey)
+	LIMIT := 15
+	rows, err := d.fetchItems(partitionKey, sortKey, LIMIT)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +152,8 @@ func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) (
 	return results, nil
 }
 
-func (d *DocumentStore) fetchItems(partitionKey string, sortKey string) (*sql.Rows, error) {
-	rows, err := d.db.Query("SELECT attributes FROM documents WHERE partitionKey = ? AND sortKey LIKE ?", partitionKey, sortKey+"%")
+func (d *DocumentStore) fetchItems(partitionKey string, sortKey string, LIMIT int) (*sql.Rows, error) {
+	rows, err := d.db.Query("SELECT attributes FROM documents WHERE partitionKey = ? AND sortKey LIKE ? LIMIT ?", partitionKey, sortKey+"%", LIMIT)
 	if err != nil {
 		d.logger.Error("Failed to fetch from SQLite:", err)
 		return nil, err

@@ -42,7 +42,7 @@ func NewMemoryLayer(nextLayer types.Cortex) *MemoryLayer {
 	return instance
 }
 
-func (m *MemoryLayer) SendMessage(message types.RequestMessage) {
+func (m *MemoryLayer) Tell(message types.RequestMessage) {
 	now := time.Now().Unix()
 	storedMessage := types.StoredMessage{
 		Content:   message.Message,
@@ -64,7 +64,7 @@ func (m *MemoryLayer) SendMessage(message types.RequestMessage) {
 	m.store.SaveItem(partitionKey, sortKey, storedMessage)
 	m.logger.Info("Sending message to memory layer", message)
 
-	m.next.SendMessage(message)
+	m.next.Tell(message)
 }
 
 func (m *MemoryLayer) GetUpdatesChan() chan types.ResponseMessage {

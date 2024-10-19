@@ -20,7 +20,7 @@ func NewTestCapability() *TestCapability {
 	}
 }
 
-func (t *TestCapability) SendMessage(msg types.RequestMessage) {
+func (t *TestCapability) Tell(msg types.RequestMessage) {
 	t.logger.Info("Received message in test capability", msg)
 
 	res := types.ResponseMessage {

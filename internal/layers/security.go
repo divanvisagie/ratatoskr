@@ -26,7 +26,7 @@ func NewSecurityLayer(next types.Cortex) *SecurityLayer {
 	return layer
 }
 
-func (s *SecurityLayer) SendMessage(message types.RequestMessage) {
+func (s *SecurityLayer) Tell(message types.RequestMessage) {
 	s.logger.Info("Sending message to security layer", message)
 
 	response := types.ResponseMessage{
@@ -72,7 +72,9 @@ func (s *SecurityLayer) SendMessage(message types.RequestMessage) {
 		}
 	}
 
-	s.next.SendMessage(message)
+	message.Role = user.Role
+
+	s.next.Tell(message)
 }
 
 func (s *SecurityLayer) GetUpdatesChan() chan types.ResponseMessage {

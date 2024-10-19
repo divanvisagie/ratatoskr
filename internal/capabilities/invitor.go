@@ -22,7 +22,7 @@ func NewInvitationCapability() *InvitationCapability {
 	}
 }
 
-func (i *InvitationCapability) SendMessage(msg types.RequestMessage) {
+func (i *InvitationCapability) Tell(msg types.RequestMessage) {
 	i.logger.Info("Received message in invitation capability", msg)
 
 	res := types.ResponseMessage{

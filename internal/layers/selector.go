@@ -2,40 +2,41 @@ package layers
 
 import (
 	"context"
+	"strings"
 
+	"github.com/divanvisagie/ratatoskr/internal/capabilities"
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
+	"github.com/divanvisagie/ratatoskr/pkg/store"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 	openai "github.com/sashabaranov/go-openai"
 )
 
 type SelectionLayer struct {
-	out          chan types.ResponseMessage
-	capabilities *[]types.Capability
-	cfg          config.Config
-	logger       *logger.Logger
+	out    chan types.ResponseMessage
+	cfg    config.Config
+	logger *logger.Logger
 }
 
-func NewSelectionLayer(cfg config.Config, caps *[]types.Capability) *SelectionLayer {
+func NewSelectionLayer(cfg config.Config) *SelectionLayer {
 	layer := &SelectionLayer{
-		out:          make(chan types.ResponseMessage),
-		capabilities: caps,
-		cfg:          cfg,
-		logger:       logger.NewLogger("SelectionLayer"),
+		out:    make(chan types.ResponseMessage),
+		cfg:    cfg,
+		logger: logger.NewLogger("SelectionLayer"),
 	}
 	return layer
 }
 
 // Function that selects the most appropriate capability
-func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capability, error) {
+func (s *SelectionLayer) selectCapability(msg types.RequestMessage, capabilities []types.Capability) (*types.Capability, error) {
 	client := openai.NewClient(s.cfg.OpenAIKey)
 
 	tools := []openai.Tool{}
-	for _, cap := range *s.capabilities {
+	for _, cap := range capabilities {
 
 		/*
 			if any capabilities return 1 for a check that means they should override
-			any AI selected capabilities	
+			any AI selected capabilities
 		*/
 		checkValue := cap.Check(msg)
 		if checkValue == 1 {
@@ -73,7 +74,7 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capa
 
 	if len(resp.Choices) == 0 || len(resp.Choices[0].Message.ToolCalls) == 0 {
 		s.logger.Warn("No choices returned by OpenAI, defaulting to first capability")
-		return &(*s.capabilities)[0], nil // Fallback to default if no choices are returned
+		return &(capabilities)[0], nil // Fallback to default if no choices are returned
 	}
 
 	// Parse the selected function (capability) from the response
@@ -82,7 +83,7 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capa
 	s.logger.Info("Selected capability", selectedFunction)
 
 	// Find and return the corresponding capability from the list
-	for _, cap := range *s.capabilities {
+	for _, cap := range capabilities {
 		if cap.Describe().Function.Name == selectedFunction {
 			return &cap, nil
 		}
@@ -91,11 +92,27 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage) (*types.Capa
 	return nil, nil // Return nil if no matching capability is found
 }
 
-func (s *SelectionLayer) SendMessage(msg types.RequestMessage) {
+func (s *SelectionLayer) Tell(msg types.RequestMessage) {
 	s.logger.Info("Received message", msg)
 
+	test := capabilities.NewTestCapability()
+	chat := capabilities.NewChatCapability(&s.cfg)
+	image := capabilities.NewImageGenerationCapability(&s.cfg)
+	caps := []types.Capability{chat, image, test}
+
+	invite := capabilities.NewInvitationCapability()
+	if msg.Role == store.Owner {
+		caps = append(caps, invite)
+	}
+
+	// Ignore group chat messages unless the bot's username is mentioned
+	if msg.AuthUser.TelegramUserId < 0 && !strings.Contains(msg.Message, s.cfg.BotUsername) {
+		s.logger.Info("Ignoring group chat message")
+		return
+	}
+
 	// Select the appropriate capability using OpenAI's function-calling API
-	cap, err := s.selectCapability(msg)
+	cap, err := s.selectCapability(msg, caps)
 	if err != nil {
 		s.logger.Error("Error selecting capability", err)
 		response := types.ResponseMessage{
@@ -106,14 +123,9 @@ func (s *SelectionLayer) SendMessage(msg types.RequestMessage) {
 		return
 	}
 
-	if cap == nil {
-		s.logger.Warn("No capability selected, defaulting to first capability")
-		cap = &(*s.capabilities)[0] // Fallback to default if OpenAI didn't select one
-	}
-
 	// Now we do the work
 	go types.ListenAndRespond(*cap, s.out)
-	(*cap).SendMessage(msg)
+	(*cap).Tell(msg)
 }
 
 func (s *SelectionLayer) ReceiveMessage() types.ResponseMessage {

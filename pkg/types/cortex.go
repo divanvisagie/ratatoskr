@@ -10,7 +10,7 @@ and exposes a channel where you can subscribe to its outputs
 */
 type Cortex interface {
 	// Send a message to the cortex for processing
-	SendMessage(RequestMessage)
+	Tell(RequestMessage)
 
 	// Get access to a channel of response messages from the cortex
 	GetUpdatesChan() chan ResponseMessage

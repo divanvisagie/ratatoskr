@@ -3,7 +3,6 @@ package telegram
 import (
 	"log"
 
-	"github.com/divanvisagie/ratatoskr/internal/capabilities"
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/layers"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
@@ -28,8 +27,17 @@ func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *log
 	}
 }
 
+func listenToBusy(busyChannel chan bool, bot *tgbotapi.BotAPI, chatId int64, logger *logger.Logger) {
+	for {
+		busyChannel <- true
+		logger.Info("Bot is busy")
+		typing := tgbotapi.NewChatAction(chatId, tgbotapi.ChatTyping)
+		bot.Send(typing)
+	}
+}
+
 func StartBot(token string, cfg *config.Config) {
-	contextLogger := logger.NewLogger("TelegramBot")
+	logger := logger.NewLogger("TelegramBot")
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
@@ -38,17 +46,12 @@ func StartBot(token string, cfg *config.Config) {
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
 
-	invite := capabilities.NewInvitationCapability()
-	test := capabilities.NewTestCapability()
-	chat := capabilities.NewChatCapability(cfg)
-	image := capabilities.NewImageGenerationCapability(cfg)
-	caps := []types.Capability{chat, image, test, invite}
-
-	selectionLayer := layers.NewSelectionLayer(*cfg, &caps)
+	selectionLayer := layers.NewSelectionLayer(*cfg)
 	memoryLayer := layers.NewMemoryLayer(selectionLayer)
 	securityLayer := layers.NewSecurityLayer(memoryLayer)
 
-	go listenAndRespond(bot, securityLayer, contextLogger)
+	go listenAndRespond(bot, securityLayer, logger)
+	busyChannel := make(chan bool)
 
 	// Listen for messages on the input channel
 	for update := range updates {
@@ -70,10 +73,8 @@ func StartBot(token string, cfg *config.Config) {
 				AuthUser: au,
 			}
 
-			go securityLayer.SendMessage(requestMessage)
-
-			typing := tgbotapi.NewChatAction(update.Message.Chat.ID, tgbotapi.ChatTyping)
-			bot.Send(typing)
+			go securityLayer.Tell(requestMessage)
+			go listenToBusy(busyChannel, bot, update.Message.Chat.ID, logger)
 		}
 	}
 }
