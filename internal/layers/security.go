@@ -1,8 +1,6 @@
 package layers
 
 import (
-	"strings"
-
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/store"
@@ -37,12 +35,6 @@ func (s *SecurityLayer) Tell(message types.RequestMessage) {
 	response := types.ResponseMessage{
 		ChatId: message.ChatId,
 		UserId: message.UserId,
-	}
-
-	// Ignore group chat messages unless the bot's username is mentioned
-	if message.AuthUser.TelegramUserId < 0 && !strings.Contains(message.Message, s.cfg.BotUsername) {
-		s.logger.Info("Ignoring group chat message")
-		return
 	}
 
 	// Check if the user is authorised

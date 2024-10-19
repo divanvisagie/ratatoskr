@@ -4,6 +4,8 @@ type StoredMessage struct {
 	CreatedAt int64  `json:"created_at"`
 	Content   string `json:"content"`
 	Role      string `json:"role"`
+	Username  string `json:"username"`
+	Fullname  string `json:"fullname"`
 }
 
 type ResponseMessage struct {
