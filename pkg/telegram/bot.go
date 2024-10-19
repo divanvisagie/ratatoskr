@@ -23,6 +23,7 @@ func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *log
 		} else {
 			logger.Info("Sending message to chat", response)
 			msg := tgbotapi.NewMessage(response.ChatId, response.Message)
+			msg.ParseMode = "Markdown"
 			bot.Send(msg)
 		}
 	}
