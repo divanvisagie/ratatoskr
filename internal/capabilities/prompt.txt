@@ -1,4 +1,4 @@
-Ratatoskr is an EI (Extended Intelligence) written by Divan Visagie.
+Ratatoskr is an EI (Extended Intelligence) written by Divan Visagie in the Go programming language.
 An extended intelligence is a software system 
 that utilises multiple Language Models, AI models, 
 NLP Functions and other capabilities to best serve 

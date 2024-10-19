@@ -1,7 +1,6 @@
 package layers
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/divanvisagie/ratatoskr/internal/logger"
@@ -23,9 +22,7 @@ func (m *MemoryLayer) listenAndRespond() {
 			Role:      "assistant",
 			CreatedAt: time.Now().Unix(),
 		}
-		partitionKey := fmt.Sprintf("user#%d", response.UserId)
-		sortKey := fmt.Sprintf("message#%d#%d", response.ChatId, storedMessage.CreatedAt)
-		m.store.SaveItem(partitionKey, sortKey, storedMessage)
+		m.store.SaveMessage(response.ChatId, storedMessage.CreatedAt, storedMessage)
 
 		m.out <- response
 	}
@@ -50,10 +47,7 @@ func (m *MemoryLayer) Tell(message types.RequestMessage) {
 		CreatedAt: now,
 	}
 
-	partitionKey := fmt.Sprintf("user#%d", message.UserId)
-	sortKey := fmt.Sprintf("message#%d#%d", message.ChatId, now)
-
-	history, err := m.store.GetStoredMessages(partitionKey, fmt.Sprintf("message#%d", message.ChatId))
+	history, err := m.store.GetStoredMessages(message.ChatId)
 	if err != nil {
 		m.logger.Error("Failed to fetch history from memory layer", err)
 	}
@@ -61,7 +55,7 @@ func (m *MemoryLayer) Tell(message types.RequestMessage) {
 	m.logger.Info("Retrieved history from memory layer", history)
 	message.History = history
 
-	m.store.SaveItem(partitionKey, sortKey, storedMessage)
+	m.store.SaveMessage(message.ChatId, now, storedMessage)
 	m.logger.Info("Sending message to memory layer", message)
 
 	m.next.Tell(message)

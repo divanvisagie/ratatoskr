@@ -9,7 +9,6 @@ import (
 	_ "modernc.org/sqlite" // Import the SQLite driver
 )
 
-
 const (
 	Admin    types.Role = "admin"
 	Standard types.Role = "standard"
@@ -59,6 +58,18 @@ func NewDocumentStore() *DocumentStore {
 	)`)
 	if err != nil {
 		logger.Error("Failed to create users table:", err)
+		return nil
+	}
+
+	// create messages table
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS messages (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		chatId INTEGER,
+		timestamp INTEGER,
+		attributes TEXT
+	)`)
+	if err != nil {
+		logger.Error("Failed to create messages table:", err)
 		return nil
 	}
 
@@ -119,9 +130,9 @@ func (d *DocumentStore) SaveUser(user User) error {
 	return nil
 }
 
-func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) ([]types.StoredMessage, error) {
+func (d *DocumentStore) GetStoredMessages(chatId int64) ([]types.StoredMessage, error) {
 	LIMIT := 15
-	rows, err := d.fetchItems(partitionKey, sortKey, LIMIT)
+	rows, err := d.fetchItems(chatId, LIMIT)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +141,8 @@ func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) (
 	var results []types.StoredMessage
 	for rows.Next() {
 		var attributesJSON string
-		if err := rows.Scan(&attributesJSON); err != nil {
+		var timestamp int64
+		if err := rows.Scan(&timestamp, &attributesJSON); err != nil {
 			d.logger.Error("Failed to scan row:", err)
 			return nil, err
 		}
@@ -149,26 +161,40 @@ func (d *DocumentStore) GetStoredMessages(partitionKey string, sortKey string) (
 		return nil, err
 	}
 
+	// reverse order bu created at on stored messages
+	for i, j := 0, len(results)-1; i < j; i, j = i+1, j-1 {
+		results[i], results[j] = results[j], results[i]
+	}
+
 	return results, nil
 }
 
-func (d *DocumentStore) fetchItems(partitionKey string, sortKey string, LIMIT int) (*sql.Rows, error) {
-	rows, err := d.db.Query("SELECT attributes FROM documents WHERE partitionKey = ? AND sortKey LIKE ? LIMIT ?", partitionKey, sortKey+"%", LIMIT)
+func (d *DocumentStore) fetchItems(chatId int64, limit int) (*sql.Rows, error) {
+	// Fetch the last 'limit' items in descending order
+	query := `
+		SELECT timestamp, attributes FROM messages 
+		WHERE chatId = ?
+		ORDER BY timestamp DESC LIMIT ?`
+
+	rows, err := d.db.Query(query, chatId, limit)
 	if err != nil {
 		d.logger.Error("Failed to fetch from SQLite:", err)
 		return nil, err
 	}
+
+	// Return rows in descending order, and you can reverse them in your Go logic as needed.
+	// Here, we're directly returning the rows as is, and you can handle the reordering of the rows after fetching them.
 	return rows, nil
 }
 
-func (d *DocumentStore) SaveItem(partitionKey string, sortKey string, item interface{}) {
+func (d *DocumentStore) SaveMessage(chatId int64, timestamp int64, item types.StoredMessage) {
 	attributesJSON, err := json.Marshal(item)
 	if err != nil {
 		d.logger.Error("Failed to marshal JSON:", err)
 		return
 	}
 
-	_, err = d.db.Exec("INSERT INTO documents (partitionKey, sortKey, attributes) VALUES (?, ?, ?)", partitionKey, sortKey, string(attributesJSON))
+	_, err = d.db.Exec("INSERT INTO messages (chatId, timestamp, attributes) VALUES (?, ?, ?)", chatId, timestamp, string(attributesJSON))
 	if err != nil {
 		d.logger.Error("Failed to insert into SQLite:", err)
 		return

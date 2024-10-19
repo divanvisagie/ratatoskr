@@ -8,6 +8,7 @@ import (
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
+	"github.com/divanvisagie/ratatoskr/pkg/openai"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 
 	o "github.com/sashabaranov/go-openai"
@@ -39,11 +40,25 @@ func NewImageGenerationCapability(cfg *config.Config) *ImageGenerationCapability
 func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 	client := o.NewClient(i.cfg.OpenAIKey)
 
+	chatClient := openai.NewChatClient(i.cfg.OpenAIKey)
+	chatClient.SetSystemPrompt("Generate an image prompt for Dall-E based on the given message.")
+	chatClient.AddStoredMessages(msg.History)
+	chatClient.AddMessage("user", msg.Message)
+
+	pr, err := chatClient.GetCompletion()
+	if err != nil {
+		i.out <- types.ResponseMessage{
+			UserId:  msg.UserId,
+			ChatId:  msg.ChatId,
+			Message: "I'm sorry, I'm having trouble getting an image for you?",
+		}
+	}
+
 	response, err := client.CreateImage(context.Background(), o.ImageRequest{
 		Model:          o.CreateImageModelDallE3,
 		Size:           o.CreateImageSize1024x1024,
 		User:           "async-openai",
-		Prompt:         msg.Message,
+		Prompt:         pr,
 		ResponseFormat: o.CreateImageResponseFormatURL,
 	})
 	if err != nil {
