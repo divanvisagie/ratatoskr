@@ -27,11 +27,10 @@ func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *log
 	}
 }
 
-func listenToBusy(busyChannel chan bool, bot *tgbotapi.BotAPI, chatId int64, logger *logger.Logger) {
-	for {
-		busyChannel <- true
+func listenToBusy(busyChannel chan types.BusyIndicatorMessage, bot *tgbotapi.BotAPI, logger *logger.Logger) {
+	for b := range busyChannel {
 		logger.Info("Bot is busy")
-		typing := tgbotapi.NewChatAction(chatId, tgbotapi.ChatTyping)
+		typing := tgbotapi.NewChatAction(b.ChatId, tgbotapi.ChatTyping)
 		bot.Send(typing)
 	}
 }
@@ -46,12 +45,14 @@ func StartBot(token string, cfg *config.Config) {
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
 
-	selectionLayer := layers.NewSelectionLayer(*cfg)
+	busyChannel := make(chan types.BusyIndicatorMessage)
+
+	selectionLayer := layers.NewSelectionLayer(*cfg, busyChannel)
 	memoryLayer := layers.NewMemoryLayer(selectionLayer)
 	securityLayer := layers.NewSecurityLayer(memoryLayer)
 
 	go listenAndRespond(bot, securityLayer, logger)
-	busyChannel := make(chan bool)
+	go listenToBusy(busyChannel, bot, logger)
 
 	// Listen for messages on the input channel
 	for update := range updates {
@@ -74,7 +75,6 @@ func StartBot(token string, cfg *config.Config) {
 			}
 
 			go securityLayer.Tell(requestMessage)
-			go listenToBusy(busyChannel, bot, update.Message.Chat.ID, logger)
 		}
 	}
 }

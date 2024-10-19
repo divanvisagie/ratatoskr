@@ -13,16 +13,18 @@ import (
 )
 
 type SelectionLayer struct {
-	out    chan types.ResponseMessage
-	cfg    config.Config
-	logger *logger.Logger
+	out         chan types.ResponseMessage
+	busyChannel chan types.BusyIndicatorMessage
+	cfg         config.Config
+	logger      *logger.Logger
 }
 
-func NewSelectionLayer(cfg config.Config) *SelectionLayer {
+func NewSelectionLayer(cfg config.Config, busyChannel chan types.BusyIndicatorMessage) *SelectionLayer {
 	layer := &SelectionLayer{
-		out:    make(chan types.ResponseMessage),
-		cfg:    cfg,
-		logger: logger.NewLogger("SelectionLayer"),
+		out:         make(chan types.ResponseMessage),
+		busyChannel: busyChannel,
+		cfg:         cfg,
+		logger:      logger.NewLogger("SelectionLayer"),
 	}
 	return layer
 }
@@ -110,6 +112,8 @@ func (s *SelectionLayer) Tell(msg types.RequestMessage) {
 		s.logger.Info("Ignoring group chat message")
 		return
 	}
+
+	s.busyChannel <- types.BusyIndicatorMessage{ChatId: msg.ChatId}
 
 	// Select the appropriate capability using OpenAI's function-calling API
 	cap, err := s.selectCapability(msg, caps)

@@ -15,6 +15,10 @@ type ResponseMessage struct {
 	Data []byte
 }
 
+type BusyIndicatorMessage struct {
+	ChatId int64
+}
+
 /*
 A chat can be either a group or a user, so we use authuser to attach to each
 request message for the purpose of authentication
