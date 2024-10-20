@@ -42,6 +42,12 @@ func (sc *SayCapability) Tell(msg types.RequestMessage) {
 		ResponseFormat: openai.SpeechResponseFormatMp3,
 		Model:          openai.TTSModel1,
 	}
+
+	sc.out <- types.ResponseMessage{
+		ChatId:   msg.ChatId,
+		DataType: types.BUSY,
+	}
+
 	res, err := client.CreateSpeech(ctx, req) //openai.RawResponse
 	if err != nil {
 		sc.logger.Error("Failed to create speech", err)

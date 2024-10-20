@@ -48,11 +48,16 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 	pr, err := chatClient.GetCompletion()
 	if err != nil {
 		i.out <- types.ResponseMessage{
-			UserId:  msg.UserId,
-			ChatId:  msg.ChatId,
+			UserId:   msg.UserId,
+			ChatId:   msg.ChatId,
 			DataType: types.TEXT,
-			Message: "I'm sorry, I'm having trouble getting an image for you?",
+			Message:  "I'm sorry, I'm having trouble getting an image for you?",
 		}
+	}
+
+	i.out <- types.ResponseMessage{
+		ChatId:   msg.ChatId,
+		DataType: types.BUSY,
 	}
 
 	response, err := client.CreateImage(context.Background(), o.ImageRequest{
@@ -64,10 +69,10 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 	})
 	if err != nil {
 		i.out <- types.ResponseMessage{
-			UserId:  msg.UserId,
-			ChatId:  msg.ChatId,
+			UserId:   msg.UserId,
+			ChatId:   msg.ChatId,
 			DataType: types.TEXT,
-			Message: "Failed to generate image with dalle",
+			Message:  "Failed to generate image with dalle",
 		}
 		return
 	}
@@ -80,19 +85,19 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 	imageBytes, err := downloadImage(responseImageUrl[0].URL)
 	if err != nil {
 		i.out <- types.ResponseMessage{
-			UserId:  msg.UserId,
-			ChatId:  msg.ChatId,
+			UserId:   msg.UserId,
+			ChatId:   msg.ChatId,
 			DataType: types.TEXT,
-			Message: "Failed to download image",
+			Message:  "Failed to download image",
 		}
 		return
 	}
 
 	i.out <- types.ResponseMessage{
-		UserId:  msg.UserId,
-		ChatId:  msg.ChatId,
-		Message: "I can't respond with images yet",
-		Data:    imageBytes,
+		UserId:   msg.UserId,
+		ChatId:   msg.ChatId,
+		Message:  "I can't respond with images yet",
+		Data:     imageBytes,
 		DataType: types.JPG,
 	}
 }
