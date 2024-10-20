@@ -21,7 +21,7 @@ func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *log
 			photo := tgbotapi.NewPhoto(response.ChatId, file)
 			bot.Send(photo)
 		} else {
-			logger.Info("Sending message to chat", response)
+			logger.Info("Sending message to chat") 
 			msg := tgbotapi.NewMessage(response.ChatId, response.Message)
 			msg.ParseMode = "Markdown"
 			bot.Send(msg)

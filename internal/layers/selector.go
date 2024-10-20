@@ -94,8 +94,6 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage, capabilities
 }
 
 func (s *SelectionLayer) Tell(msg types.RequestMessage) {
-	s.logger.Info("Received message", msg)
-
 	test := capabilities.NewTestCapability()
 	chat := capabilities.NewChatCapability(&s.cfg)
 	image := capabilities.NewImageGenerationCapability(&s.cfg)

@@ -3,6 +3,8 @@ package store
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
@@ -183,16 +185,60 @@ func (d *DocumentStore) getMessages(chatId int64, limit int) (*sql.Rows, error) 
 	return rows, nil
 }
 
-func (d *DocumentStore) SaveMessage(chatId int64, timestamp int64, item types.StoredMessage) {
+func (s *DocumentStore) FetchMessagesByIDs(ids []int64) ([]types.StoredMessage, error) {
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("no IDs provided")
+	}
+
+	// Dynamically build the IN clause with the right number of placeholders
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"      // SQLite placeholder for arguments
+		args[i] = id               // Assign each ID to args slice
+	}
+
+	// Join the placeholders into the query
+	query := fmt.Sprintf("SELECT id, content FROM messages WHERE id IN (%s)", strings.Join(placeholders, ","))
+
+	// Execute the query with the dynamically generated placeholders
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch messages: %w", err)
+	}
+	defer rows.Close()
+
+	var messages []types.StoredMessage
+	for rows.Next() {
+		var message types.StoredMessage
+		if err := rows.Scan(&message.Content); err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	return messages, nil
+}
+
+// Save the message and return the id with which it was saved
+func (d *DocumentStore) SaveMessage(chatId int64, timestamp int64, item types.StoredMessage) (int64, error) {
 	attributesJSON, err := json.Marshal(item)
 	if err != nil {
 		d.logger.Error("Failed to marshal JSON:", err)
-		return
+		return 0, err
 	}
 
-	_, err = d.db.Exec("INSERT INTO messages (chatId, timestamp, attributes) VALUES (?, ?, ?)", chatId, timestamp, string(attributesJSON))
+	result, err := d.db.Exec("INSERT INTO messages (chatId, timestamp, attributes) VALUES (?, ?, ?)", chatId, timestamp, string(attributesJSON))
 	if err != nil {
 		d.logger.Error("Failed to insert into SQLite:", err)
-		return
+		return 0, err
 	}
+	
+	id, err := result.LastInsertId()
+	if err != nil {
+		d.logger.Error("Failed to retrieve inserted id:", err)
+		return 0, err
+	}
+
+	return id, nil
 }

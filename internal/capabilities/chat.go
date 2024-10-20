@@ -7,9 +7,10 @@ import (
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/clients"
+	"github.com/divanvisagie/ratatoskr/pkg/store"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 
-	o "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type ChatCapability struct {
@@ -37,8 +38,32 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 	return instance
 }
 
+func getRelatedMessages(cfg config.Config, logger logger.Logger, msg types.RequestMessage) ([]types.StoredMessage, error) {
+
+	ec := clients.NewEmbeddingsClient(cfg.OpenAIKey)
+	embeddings, err := ec.GetEmbeddings(msg.Message)
+	if err != nil {
+		logger.Error("Failed to generate embeddings for message", err)
+	}
+
+	cc := clients.NewChromaClient(cfg)
+	ids, err := cc.SearchForMessage(embeddings, 5)
+	if err != nil {
+		logger.Error("Failed to search for related messages", err)
+	}
+
+	dc := store.NewDocumentStore() 
+
+	messages, err := dc.FetchMessagesByIDs(ids)
+	if err != nil {
+		logger.Error("Failed to fetch messages from document store", err)
+	}
+
+	return messages, nil
+}
+
+
 func (c *ChatCapability) Tell(msg types.RequestMessage) {
-	c.logger.Info("Sending message to chat capability", msg)
 	client := clients.NewChatClient(c.cfg.OpenAIKey)
 
 	if msg.AuthUser.TelegramUserId < 0 {
@@ -46,7 +71,17 @@ func (c *ChatCapability) Tell(msg types.RequestMessage) {
 	}
 	message := fmt.Sprintf("@%s (%s): %s", msg.Username, msg.Fullname, msg.Message)
 
+	related, err := getRelatedMessages(*c.cfg, *c.logger, msg)
+	if err != nil {
+		c.logger.Error("Failed to get related messages", err)
+	}
+
+	c.logger.Info(">> Related messages", related)
+
 	client.SetSystemPrompt(systemPrompt)
+	client.AddMessage("system", "the next set of messages are unordered related messages returned from a vector search that may be relevant to the users query")
+	client.AddStoredMessages(related)
+	client.AddMessage("system", "the next set of messages are the last few messages in this chat in order")
 	client.AddStoredMessages(msg.History)
 	client.AddMessage("user", message)
 	response, err := client.GetCompletion()
@@ -78,13 +113,13 @@ func (c *ChatCapability) Stop() {
 	c.done <- true
 }
 
-func (c *ChatCapability) Describe() o.Tool {
-	fd := o.FunctionDefinition{
+func (c *ChatCapability) Describe() openai.Tool {
+	fd := openai.FunctionDefinition{
 		Name:        "ChatCapability",
 		Description: "General chat capability that sends responses from gpt-4o",
 	}
-	return o.Tool{
-		Type:     o.ToolTypeFunction,
+	return openai.Tool{
+		Type:     openai.ToolTypeFunction,
 		Function: &fd,
 	}
 }

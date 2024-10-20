@@ -21,7 +21,7 @@ func NewTestCapability() *TestCapability {
 }
 
 func (t *TestCapability) Tell(msg types.RequestMessage) {
-	t.logger.Info("Received message in test capability", msg)
+	t.logger.Info("Received message in test capability")
 
 	res := types.ResponseMessage {
 		UserId: msg.UserId,
