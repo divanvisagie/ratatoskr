@@ -50,6 +50,7 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 		i.out <- types.ResponseMessage{
 			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
+			DataType: types.TEXT,
 			Message: "I'm sorry, I'm having trouble getting an image for you?",
 		}
 	}
@@ -65,6 +66,7 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 		i.out <- types.ResponseMessage{
 			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
+			DataType: types.TEXT,
 			Message: "Failed to generate image with dalle",
 		}
 		return
@@ -80,6 +82,7 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 		i.out <- types.ResponseMessage{
 			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
+			DataType: types.TEXT,
 			Message: "Failed to download image",
 		}
 		return

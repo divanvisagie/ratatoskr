@@ -27,6 +27,7 @@ func (t *TestCapability) Tell(msg types.RequestMessage) {
 		UserId: msg.UserId,
 		ChatId: msg.ChatId,
 		Message: "The user sent a test message so I will respond in kind",
+		DataType: types.TEXT,
 	}
 
 	t.out <- res

@@ -85,12 +85,14 @@ func (c *ChatCapability) Tell(msg types.RequestMessage) {
 		c.out <- types.ResponseMessage{
 			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
+			DataType: types.TEXT,
 			Message: "I'm sorry, I'm having trouble processing your request, it looks like I'm having trouble talking to OpenAI",
 		}
 	} else {
 		c.out <- types.ResponseMessage{
 			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
+			DataType: types.TEXT,
 			Message: response,
 		}
 	}
