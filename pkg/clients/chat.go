@@ -41,7 +41,7 @@ func (c *ChatClient) GetCompletion() (string, error) {
 	req := openai.ChatCompletionRequest{
 		Model:     "gpt-4o",
 		Messages:  *c.context,
-		MaxTokens: 100,
+		MaxTokens: 400,
 	}
 	log.Println(req)
 
