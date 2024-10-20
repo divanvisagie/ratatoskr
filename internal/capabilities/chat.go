@@ -40,14 +40,8 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 
 func getRelatedMessages(cfg config.Config, logger logger.Logger, msg types.RequestMessage) ([]types.StoredMessage, error) {
 
-	ec := clients.NewEmbeddingsClient(cfg.OpenAIKey)
-	embeddings, err := ec.GetEmbeddings(msg.Message)
-	if err != nil {
-		logger.Error("Failed to generate embeddings for message", err)
-	}
-
 	cc := clients.NewChromaClient(cfg)
-	ids, err := cc.SearchForMessage(embeddings, 5)
+	ids, err := cc.SearchForMessage(msg.Message, 5)
 	if err != nil {
 		logger.Error("Failed to search for related messages", err)
 	}

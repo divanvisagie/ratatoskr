@@ -199,7 +199,7 @@ func (s *DocumentStore) FetchMessagesByIDs(ids []int64) ([]types.StoredMessage, 
 	}
 
 	// Join the placeholders into the query
-	query := fmt.Sprintf("SELECT id, content FROM messages WHERE id IN (%s)", strings.Join(placeholders, ","))
+	query := fmt.Sprintf("SELECT attributes FROM messages WHERE id IN (%s)", strings.Join(placeholders, ","))
 
 	// Execute the query with the dynamically generated placeholders
 	rows, err := s.db.Query(query, args...)

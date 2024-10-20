@@ -1,11 +1,11 @@
 package clients
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"context"
 
+	ch "github.com/amikos-tech/chroma-go"
+	"github.com/amikos-tech/chroma-go/openai"
+	ty "github.com/amikos-tech/chroma-go/types"
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
 )
@@ -14,100 +14,85 @@ type ChromaClient struct {
 	logger    logger.Logger
 	chromaURL string
 	cfg       config.Config
+	client    *ch.Client
+	openaiEf  *openai.OpenAIEmbeddingFunction
 }
 
 func NewChromaClient(config config.Config) *ChromaClient {
+	logger := *logger.NewLogger("ChromaClient")
+	client, err := ch.NewClient(config.ChromaBaseUrl)
+	if err != nil {
+		logger.Error("Failed to create Chroma client", err)
+		panic(err)
+	}
+
+	openaiEf, err := openai.NewOpenAIEmbeddingFunction(config.OpenAIKey)
+	if err != nil {
+		logger.Error("Failed to create OpenAI embedding function", err)
+	}
+
+	// Create a new collection with OpenAI embedding function, L2 distance function and metadata
+	_, err = client.CreateCollection(context.Background(), "chat_messages", map[string]interface{}{"id": "mc"}, true, openaiEf, ty.L2)
+	if err != nil {
+		logger.Error("Failed to create Chroma collection", err)
+	}
+
+	logger.Info("Chroma client created successfully", client)
+
 	return &ChromaClient{
-		logger:    *logger.NewLogger("ChromaClient"),
 		chromaURL: config.ChromaBaseUrl,
 		cfg:       config,
+		logger:    logger,
+		client:    client,
+		openaiEf:  openaiEf,
 	}
-}
-
-// SearchForMessage performs a vector-based search for related messages
-func (c *ChromaClient) SearchForMessage(vector []float32, topK int) ([]int64, error) {
-	// Prepare the query payload
-	queryPayload := map[string]interface{}{
-		"vector": vector, // The query vector to search for
-		"top_k":  topK,   // Number of top related results to retrieve
-	}
-
-	// Convert the payload to JSON
-	queryBytes, err := json.Marshal(queryPayload)
-	if err != nil {
-		c.logger.Error("Failed to marshal query payload", err)
-		return nil, err
-	}
-
-	// Send the POST request to Chroma's /query endpoint
-	resp, err := http.Post(fmt.Sprintf("%s/api/v1/query", c.chromaURL), "application/json", bytes.NewBuffer(queryBytes))
-	if err != nil {
-		c.logger.Error("Failed to query Chroma for related messages", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Error(fmt.Sprintf("Chroma responded with status: %d", resp.StatusCode))
-		return nil, fmt.Errorf("Chroma query failed with status: %d", resp.StatusCode)
-	}
-
-	// Decode the response into the expected structure
-	var searchResults struct {
-		Results []struct {
-			Score    float64                `json:"score"`
-			Metadata map[string]interface{} `json:"metadata"`
-		} `json:"results"`
-	}
-
-	err = json.NewDecoder(resp.Body).Decode(&searchResults)
-	if err != nil {
-		c.logger.Error("Failed to decode Chroma search response", err)
-		return nil, err
-	}
-
-	// Extract message IDs from the results
-	var messageIDs []int64
-	for _, result := range searchResults.Results {
-		if id, ok := result.Metadata["id"].(float64); ok {
-			messageIDs = append(messageIDs, int64(id))
-		}
-	}
-
-	return messageIDs, nil
 }
 
 // SaveEmbeddedVector stores an embedded vector with metadata in Chroma
-func (c *ChromaClient) SaveEmbeddedVector(vector []float32, content string, messageId int64, chatId int64) error {
-	// Prepare payload for Chroma
-	payload := map[string]interface{}{
-		"vector": vector, // The vector you got from the embeddings client
-		"metadata": map[string]interface{}{ // Optional: Store message metadata
-			"id":      messageId,
-			"chatId":  chatId,
-			"content": content,
-		},
-	}
-
-	// Convert payload to JSON
-	payloadBytes, err := json.Marshal(payload)
+func (c *ChromaClient) SaveEmbeddedVector(messageId int64, chatId int64, content string) error {
+	// Get collection
+	collection, err := c.client.GetCollection(context.Background(), "chat_messages", c.openaiEf)
 	if err != nil {
-		c.logger.Error("Failed to marshal embedding payload", err)
-		return nil
+		c.logger.Error("Failed to get collection", err)
+		return err
 	}
 
-	// Send POST request to Chroma's /embeddings endpoint
-	resp, err := http.Post(fmt.Sprintf("%s/api/v1/embeddings", c.chromaURL), "application/json", bytes.NewBuffer(payloadBytes))
+	_, err = collection.Add(context.TODO(), nil, []map[string]interface{}{{"id": messageId}}, []string{content}, []string{string(messageId)})
 	if err != nil {
-		c.logger.Error("Failed to store embedding in Chroma", err)
-		return nil
+		c.logger.Error("Failed to add document", err)
+		return err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Error(fmt.Sprintf("Chroma responded with status: %d", resp.StatusCode))
-		return nil
-	}
-	
 	return nil
+}
+
+// SearchForMessage performs a vector-based search for related messages
+func (c *ChromaClient) SearchForMessage(message string, topK int32) ([]int64, error) {
+	// Get collection
+	collection, err := c.client.GetCollection(context.Background(), "chat_messages", c.openaiEf)
+	if err != nil {
+		c.logger.Error("Failed to get collection", err)
+		return nil, err
+	}
+
+	// Perform search
+
+	data, err := collection.Query(context.Background(), []string{message}, topK, nil, nil, nil)
+	if err != nil {
+		c.logger.Error("Failed to query collection", err)
+		return nil, err
+	}
+
+
+	c.logger.Info("Search results", data.Metadatas)
+
+	ids := make([]int64, len(data.Metadatas))
+	for i, metadata := range data.Metadatas {
+		raw := metadata[0]
+		id := raw["id"]
+		ids[i] = int64(id.(float64))
+	}
+
+	c.logger.Info("Search results", ids)
+
+	return ids, nil
 }
