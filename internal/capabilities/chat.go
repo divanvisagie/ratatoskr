@@ -40,7 +40,7 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 
 func getRelatedMessages(cfg config.Config, logger logger.Logger, msg types.RequestMessage) ([]types.StoredMessage, error) {
 
-	cc := clients.NewChromaClient(cfg)
+	cc := clients.NewChromaClient(cfg, msg.ChatId)
 	ids, err := cc.SearchForMessage(msg.Message, 5)
 	if err != nil {
 		logger.Error("Failed to search for related messages", err)

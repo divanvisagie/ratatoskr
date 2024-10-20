@@ -29,7 +29,7 @@ func NewLongTermMemoryService(client clients.EmbeddingsClient, cfg config.Config
 // StoreMessageLongTerm generates embeddings and stores them in Chroma
 func (l *LongTermMemoryService) StoreMessageLongTerm(id int64, chatId int64, message types.StoredMessage) {
 
-	cc := clients.NewChromaClient(l.cfg)
+	cc := clients.NewChromaClient(l.cfg, chatId)
 	err := cc.SaveEmbeddedVector(id, chatId, message.Content)
 	if err != nil {
 		// Handle error

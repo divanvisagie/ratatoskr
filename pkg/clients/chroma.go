@@ -2,6 +2,7 @@ package clients
 
 import (
 	"context"
+	"fmt"
 
 	ch "github.com/amikos-tech/chroma-go"
 	"github.com/amikos-tech/chroma-go/openai"
@@ -11,16 +12,18 @@ import (
 )
 
 type ChromaClient struct {
-	logger    logger.Logger
-	chromaURL string
-	cfg       config.Config
-	client    *ch.Client
-	openaiEf  *openai.OpenAIEmbeddingFunction
+	logger         logger.Logger
+	chromaURL      string
+	cfg            config.Config
+	client         *ch.Client
+	openaiEf       *openai.OpenAIEmbeddingFunction
+	collectionName string
 }
 
-func NewChromaClient(config config.Config) *ChromaClient {
+func NewChromaClient(config config.Config, chatId int64) *ChromaClient {
 	logger := *logger.NewLogger("ChromaClient")
 	client, err := ch.NewClient(config.ChromaBaseUrl)
+	collectionName := fmt.Sprintf("chat_messages_%d", chatId)
 	if err != nil {
 		logger.Error("Failed to create Chroma client", err)
 		panic(err)
@@ -32,7 +35,7 @@ func NewChromaClient(config config.Config) *ChromaClient {
 	}
 
 	// Create a new collection with OpenAI embedding function, L2 distance function and metadata
-	_, err = client.CreateCollection(context.Background(), "chat_messages", map[string]interface{}{"id": "mc"}, true, openaiEf, ty.L2)
+	_, err = client.CreateCollection(context.Background(), collectionName, map[string]interface{}{"id": "mc"}, true, openaiEf, ty.L2)
 	if err != nil {
 		logger.Error("Failed to create Chroma collection", err)
 	}
@@ -40,18 +43,19 @@ func NewChromaClient(config config.Config) *ChromaClient {
 	logger.Info("Chroma client created successfully", client)
 
 	return &ChromaClient{
-		chromaURL: config.ChromaBaseUrl,
-		cfg:       config,
-		logger:    logger,
-		client:    client,
-		openaiEf:  openaiEf,
+		chromaURL:      config.ChromaBaseUrl,
+		cfg:            config,
+		logger:         logger,
+		client:         client,
+		openaiEf:       openaiEf,
+		collectionName: collectionName,
 	}
 }
 
 // SaveEmbeddedVector stores an embedded vector with metadata in Chroma
 func (c *ChromaClient) SaveEmbeddedVector(messageId int64, chatId int64, content string) error {
 	// Get collection
-	collection, err := c.client.GetCollection(context.Background(), "chat_messages", c.openaiEf)
+	collection, err := c.client.GetCollection(context.Background(), c.collectionName, c.openaiEf)
 	if err != nil {
 		c.logger.Error("Failed to get collection", err)
 		return err
@@ -68,7 +72,7 @@ func (c *ChromaClient) SaveEmbeddedVector(messageId int64, chatId int64, content
 // SearchForMessage performs a vector-based search for related messages
 func (c *ChromaClient) SearchForMessage(message string, topK int32) ([]int64, error) {
 	// Get collection
-	collection, err := c.client.GetCollection(context.Background(), "chat_messages", c.openaiEf)
+	collection, err := c.client.GetCollection(context.Background(), c.collectionName, c.openaiEf)
 	if err != nil {
 		c.logger.Error("Failed to get collection", err)
 		return nil, err
