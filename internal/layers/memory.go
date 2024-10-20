@@ -6,6 +6,8 @@ import (
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
+	"github.com/divanvisagie/ratatoskr/internal/services"
+	"github.com/divanvisagie/ratatoskr/pkg/clients"
 	"github.com/divanvisagie/ratatoskr/pkg/store"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 )
@@ -62,6 +64,10 @@ func (m *MemoryLayer) Tell(message types.RequestMessage) {
 	message.History = history
 
 	m.store.SaveMessage(message.ChatId, now, storedMessage)
+	ec := clients.NewEmbeddingsClient(m.cfg.OpenAIKey)
+	ltms := services.NewLongTermMemoryService(ec, m.cfg)
+	// TODO: Make sure we actually store with an Id
+	ltms.StoreMessageLongTerm(0, storedMessage)
 
 	// Ignore group chat messages unless the bot's username is mentioned
 	if message.AuthUser.TelegramUserId < 0 && !strings.Contains(message.Message, m.cfg.BotUsername) {

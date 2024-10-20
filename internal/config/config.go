@@ -7,6 +7,7 @@ type Config struct {
 	OpenAIKey     string
 	Owner         string
 	BotUsername   string
+	ChromaBaseUrl string
 }
 
 func LoadConfig() *Config {
@@ -15,5 +16,6 @@ func LoadConfig() *Config {
 		OpenAIKey:     os.Getenv("OPENAI_API_KEY"),
 		Owner:         os.Getenv("RATATOSKR_OWNER"),
 		BotUsername:   os.Getenv("RATATOSKR_BOT_USERNAME"),
+		ChromaBaseUrl: os.Getenv("CHROMA_BASE_URL"),
 	}
 }

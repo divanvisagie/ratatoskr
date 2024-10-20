@@ -6,7 +6,7 @@ import (
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
-	"github.com/divanvisagie/ratatoskr/pkg/openai"
+	"github.com/divanvisagie/ratatoskr/pkg/clients"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 
 	o "github.com/sashabaranov/go-openai"
@@ -39,7 +39,7 @@ func NewChatCapability(cfg *config.Config) *ChatCapability {
 
 func (c *ChatCapability) Tell(msg types.RequestMessage) {
 	c.logger.Info("Sending message to chat capability", msg)
-	client := openai.NewChatClient(c.cfg.OpenAIKey)
+	client := clients.NewChatClient(c.cfg.OpenAIKey)
 
 	if msg.AuthUser.TelegramUserId < 0 {
 		systemPrompt = fmt.Sprintf("%s\nFYI: You are in a group chat.", systemPrompt)

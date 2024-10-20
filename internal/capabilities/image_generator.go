@@ -8,7 +8,7 @@ import (
 
 	"github.com/divanvisagie/ratatoskr/internal/config"
 	"github.com/divanvisagie/ratatoskr/internal/logger"
-	"github.com/divanvisagie/ratatoskr/pkg/openai"
+	"github.com/divanvisagie/ratatoskr/pkg/clients"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
 
 	o "github.com/sashabaranov/go-openai"
@@ -40,7 +40,7 @@ func NewImageGenerationCapability(cfg *config.Config) *ImageGenerationCapability
 func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 	client := o.NewClient(i.cfg.OpenAIKey)
 
-	chatClient := openai.NewChatClient(i.cfg.OpenAIKey)
+	chatClient := clients.NewChatClient(i.cfg.OpenAIKey)
 	chatClient.SetSystemPrompt("Generate an image prompt for Dall-E based on the given message.")
 	chatClient.AddStoredMessages(msg.History)
 	chatClient.AddMessage("user", msg.Message)

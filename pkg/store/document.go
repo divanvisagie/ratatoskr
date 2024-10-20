@@ -132,7 +132,7 @@ func (d *DocumentStore) SaveUser(user User) error {
 
 func (d *DocumentStore) GetStoredMessages(chatId int64) ([]types.StoredMessage, error) {
 	LIMIT := 15
-	rows, err := d.fetchItems(chatId, LIMIT)
+	rows, err := d.getMessages(chatId, LIMIT)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,6 @@ func (d *DocumentStore) GetStoredMessages(chatId int64) ([]types.StoredMessage, 
 		return nil, err
 	}
 
-	// reverse order bu created at on stored messages
 	for i, j := 0, len(results)-1; i < j; i, j = i+1, j-1 {
 		results[i], results[j] = results[j], results[i]
 	}
@@ -169,8 +168,7 @@ func (d *DocumentStore) GetStoredMessages(chatId int64) ([]types.StoredMessage, 
 	return results, nil
 }
 
-func (d *DocumentStore) fetchItems(chatId int64, limit int) (*sql.Rows, error) {
-	// Fetch the last 'limit' items in descending order
+func (d *DocumentStore) getMessages(chatId int64, limit int) (*sql.Rows, error) {
 	query := `
 		SELECT timestamp, attributes FROM messages 
 		WHERE chatId = ?
@@ -182,8 +180,6 @@ func (d *DocumentStore) fetchItems(chatId int64, limit int) (*sql.Rows, error) {
 		return nil, err
 	}
 
-	// Return rows in descending order, and you can reverse them in your Go logic as needed.
-	// Here, we're directly returning the rows as is, and you can handle the reordering of the rows after fetching them.
 	return rows, nil
 }
 

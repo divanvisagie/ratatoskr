@@ -43,6 +43,7 @@ pushpi:
 	rsync -av --progress $(LINUX_ARM64) $(PI):~/src/$(APP_NAME)/bin
 	rsync -av --progress scripts $(PI):~/src/$(APP_NAME)
 	rsync -av --progress Makefile $(PI):~/src/$(APP_NAME)
+	rsync -av --progress docker-compose.yml $(PI):~/src/$(APP_NAME)
 
 install:
 	# stop the service if it already exists

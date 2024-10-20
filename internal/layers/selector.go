@@ -52,7 +52,7 @@ func (s *SelectionLayer) selectCapability(msg types.RequestMessage, capabilities
 
 	// Create OpenAI function call request
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT4o, // Use GPT-4 or GPT-3.5 depending on your plan
+		Model: openai.GPT4oMini, // Use GPT-4 or GPT-3.5 depending on your plan
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleSystem,
