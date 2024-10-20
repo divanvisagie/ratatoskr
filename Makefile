@@ -12,7 +12,7 @@ main:
 	go build -o $(BIN_DIR)/$(APP_NAME) cmd/$(APP_NAME)/main.go
 
 dev:
-	go run cmd/$(APP_NAME)/main.go
+	air 
 
 build-linux: 
 	GOOS=linux GOARCH=amd64 go build -o $(LINUX_AMD64)/$(APP_NAME) cmd/$(APP_NAME)/main.go

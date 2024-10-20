@@ -97,7 +97,8 @@ func (s *SelectionLayer) Tell(msg types.RequestMessage) {
 	test := capabilities.NewTestCapability()
 	chat := capabilities.NewChatCapability(&s.cfg)
 	image := capabilities.NewImageGenerationCapability(&s.cfg)
-	caps := []types.Capability{chat, image, test}
+	say := capabilities.NewSayCapability(&s.cfg)
+	caps := []types.Capability{chat, image, say, test}
 
 	invite := capabilities.NewInvitationCapability()
 	if msg.Role == store.Owner {

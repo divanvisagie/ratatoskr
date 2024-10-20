@@ -90,6 +90,7 @@ func (i *ImageGenerationCapability) Tell(msg types.RequestMessage) {
 		ChatId:  msg.ChatId,
 		Message: "I can't respond with images yet",
 		Data:    imageBytes,
+		DataType: types.JPG,
 	}
 }
 

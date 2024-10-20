@@ -13,15 +13,26 @@ import (
 
 func listenAndRespond(bot *tgbotapi.BotAPI, firstLayer types.Cortex, logger *logger.Logger) {
 	for response := range firstLayer.GetUpdatesChan() {
-		if response.Data != nil {
+		switch response.DataType {
+		case types.JPG:
 			file := tgbotapi.FileBytes{
 				Name:  "image.jpg",
 				Bytes: response.Data,
 			}
 			photo := tgbotapi.NewPhoto(response.ChatId, file)
 			bot.Send(photo)
-		} else {
-			logger.Info("Sending message to chat") 
+
+		case types.MP3:
+			// code to handle MP3 data type goes here
+			file := tgbotapi.FileBytes{
+				Name:  "image.mp3",
+				Bytes: response.Data,
+			}
+			mp3 := tgbotapi.NewVoice(response.ChatId, file)
+			bot.Send(mp3)
+
+		default:
+			logger.Info("Sending message to chat")
 			msg := tgbotapi.NewMessage(response.ChatId, response.Message)
 			msg.ParseMode = "Markdown"
 			bot.Send(msg)
