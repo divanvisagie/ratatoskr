@@ -82,14 +82,17 @@ func (c *ChromaClient) SearchForMessage(message string, topK int32) ([]int64, er
 		return nil, err
 	}
 
-
 	c.logger.Info("Search results", data.Metadatas)
 
-	ids := make([]int64, len(data.Metadatas))
-	for i, metadata := range data.Metadatas {
-		raw := metadata[0]
-		id := raw["id"]
-		ids[i] = int64(id.(float64))
+	ids := make([]int64, len(data.Metadatas[0]))
+	for _, metadata := range data.Metadatas {
+		for k, v := range metadata {
+			c.logger.Info(">>> item in metadata", k, v)
+			id := v["id"]
+			final := int64(id.(float64))
+			c.logger.Info(">>> final ID", final)
+			ids[k] = final
+		}
 	}
 
 	c.logger.Info("Search results", ids)

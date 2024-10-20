@@ -210,8 +210,14 @@ func (s *DocumentStore) FetchMessagesByIDs(ids []int64) ([]types.StoredMessage, 
 
 	var messages []types.StoredMessage
 	for rows.Next() {
+		var attr string 
+		if err := rows.Scan(&attr); err != nil {
+			return nil, err
+		}
+		s.logger.Info("attr >>", attr)
+		// message is in json, so we need to deserialise
 		var message types.StoredMessage
-		if err := rows.Scan(&message.Content); err != nil {
+		if err := json.Unmarshal([]byte(attr), &message); err != nil {
 			return nil, err
 		}
 		messages = append(messages, message)

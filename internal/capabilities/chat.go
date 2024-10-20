@@ -81,10 +81,11 @@ func (c *ChatCapability) Tell(msg types.RequestMessage) {
 	response, err := client.GetCompletion()
 
 	if err != nil {
+		c.logger.Error("Error calling OpenAI", err)
 		c.out <- types.ResponseMessage{
 			UserId:  msg.UserId,
 			ChatId:  msg.ChatId,
-			Message: "I'm sorry, I'm having trouble processing your request",
+			Message: "I'm sorry, I'm having trouble processing your request, it looks like I'm having trouble talking to OpenAI",
 		}
 	} else {
 		c.out <- types.ResponseMessage{
