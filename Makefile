@@ -54,3 +54,9 @@ install:
 	cp scripts/ratatoskr.service /etc/systemd/system/
 	systemctl enable ratatoskr
 	systemctl start ratatoskr
+
+
+setup:
+	go install github.com/air-verse/air@latest
+	air init
+

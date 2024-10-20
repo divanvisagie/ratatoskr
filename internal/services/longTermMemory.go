@@ -39,8 +39,6 @@ func (l *LongTermMemoryService) StoreMessageLongTerm(id int64, message types.Sto
 		return
 	}
 
-	l.logger.Info("Generated embeddings for message", result)
-
 	// Prepare payload for Chroma
 	payload := map[string]interface{}{
 		"vector": result, // The vector you got from the embeddings client

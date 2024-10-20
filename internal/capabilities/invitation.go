@@ -7,7 +7,7 @@ import (
 	"github.com/divanvisagie/ratatoskr/internal/logger"
 	"github.com/divanvisagie/ratatoskr/pkg/store"
 	"github.com/divanvisagie/ratatoskr/pkg/types"
-	o "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
 )
 
 type InvitationCapability struct {
@@ -74,14 +74,14 @@ func (i *InvitationCapability) GetUpdatesChan() chan types.ResponseMessage {
 	return i.out
 }
 
-func (i *InvitationCapability) Describe() o.Tool {
-	fd := o.FunctionDefinition{
+func (i *InvitationCapability) Describe() openai.Tool {
+	fd := openai.FunctionDefinition{
 		Name:        "InvitationCapability",
 		Description: "Capability for messages that bgin with /invite",
 	}
 
-	return o.Tool{
-		Type:     o.ToolTypeFunction,
+	return openai.Tool{
+		Type:     openai.ToolTypeFunction,
 		Function: &fd,
 	}
 }

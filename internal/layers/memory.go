@@ -60,7 +60,6 @@ func (m *MemoryLayer) Tell(message types.RequestMessage) {
 		m.logger.Error("Failed to fetch history from memory layer", err)
 	}
 
-	m.logger.Info("Retrieved history from memory layer", history)
 	message.History = history
 
 	m.store.SaveMessage(message.ChatId, now, storedMessage)
