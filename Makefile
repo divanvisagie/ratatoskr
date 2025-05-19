@@ -1,30 +1,34 @@
-APP_NAME=ratatoskr
+# Makefile for Deno Telegram <-> Kafka (Redpanda) Bot
 
-main:
-	cargo build --release
+.PHONY: install setup run dev stop
 
-# run docker compose on docker-compose.test.yml
-test:
-	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+# Redpanda config
+KAFKA_BROKER=localhost:9092
+KAFKA_IN_TOPIC?=com.sectorflabs.ratatoskr.in
+KAFKA_OUT_TOPIC?=com.sectorflabs.ratatoskr.out
 
-pushpi:
-	ssh $(PI) "mkdir -p ~/src/" \
-	&& rsync -av --progress src $(PI):~/src/$(APP_NAME) \
-    && rsync -av --progress Cargo.toml $(PI):~/src/$(APP_NAME) \
-	&& rsync -av --progress Cargo.lock $(PI):~/src/$(APP_NAME) \
-	&& rsync -av --progress Makefile $(PI):~/src/$(APP_NAME) \
-
+# Install Redpanda natively (macOS/Linux with Homebrew)
 install:
-	# stop the service if it already exists
-	systemctl stop ratatoskr || true
-	systemctl disable ratatoskr || true
-	# delete the old service file if it exists
-	rm /etc/systemd/system/ratatoskr.service || true
-	cp scripts/ratatoskr.service /etc/systemd/system/
+	brew install redpanda-data/tap/redpanda
+
+# Setup Redpanda natively and create topics
+setup:
+	rpk container start
+	rpk topic create $(KAFKA_IN_TOPIC) || true; \
+	rpk topic create $(KAFKA_OUT_TOPIC) || true; \
+	echo "Redpanda and topics are ready."
+
+run:
+	deno run -A main.ts
 
 dev:
-	cargo watch -x run
+	deno run --watch -A main.ts
 
-update:
-	cargo update --aggressive
+stop:
+	pkill -f "redpanda start" || true 
 
+consume:
+	rpk topic consume com.sectorflabs.ratatoskr.in -n 1 | jq
+
+produce:
+	echo '{"chat_id":$(CHAT_ID),"text":"hi from make"}' | rpk topic produce com.sectorflabs.ratatoskr.out
