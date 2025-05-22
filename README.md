@@ -122,27 +122,85 @@ For a complete development environment with Kafka, Zookeeper, and Kafdrop (a Kaf
 
 ---
 
-## 📤 Kafka Message Format
+## 📤 Kafka Message Formats
 
-**Incoming Topic:** `com.sectorflabs.ratatoskr.in`
+This section describes the JSON message formats used by Ratatoskr when communicating with Kafka.
+
+### Incoming Messages to `KAFKA_IN_TOPIC` (e.g., `com.sectorflabs.ratatoskr.in`)
+
+Messages sent *from* Telegram *to* Kafka are placed on this topic. There are two main types of messages:
+
+#### 1. Standard Messages
+
+These are standard Telegram messages received by the bot.
+*   **Kafka Key:** "message"
+*   **Payload:** The full Telegram `Message` object, serialized as JSON.
 
 ```json
 {
   "message_id": 123,
-  "from": { "id": 456, "first_name": "User" },
-  "chat": { "id": 789, "type": "private" },
+  "from": { "id": 456, "first_name": "User", "is_bot": false, "username": "testuser" },
+  "chat": { "id": 789, "type": "private", "first_name": "User", "username": "testuser" },
   "date": 1678901234,
   "text": "Hello bot!"
-  // Full Telegram Message object serialized as JSON
+  // ... other fields from the Telegram Message object
 }
 ```
 
-**Outgoing Topic:** `com.sectorflabs.ratatoskr.out`
+#### 2. Callback Query Messages (Button Clicks)
+
+These messages are generated when a user clicks an inline button sent by the bot.
+*   **Kafka Key:** "callback_query"
+*   **Payload:** A custom JSON structure containing details about the button click.
+
+```json
+{
+    "chat_id": 123456789,
+    "user_id": 987654321,
+    "message_id": 54321,
+    "callback_data": "action_1",
+    "callback_query_id": "1234567890123456789"
+}
+```
+
+**Field Descriptions:**
+*   `chat_id`: ID of the chat where the button was clicked.
+*   `user_id`: ID of the user who clicked the button.
+*   `message_id`: ID of the message to which the button was attached.
+*   `callback_data`: The `callback_data` string associated with the clicked button.
+*   `callback_query_id`: The unique ID for this callback query, useful for responding or acknowledging.
+
+### Outgoing Messages from `KAFKA_OUT_TOPIC` (e.g., `com.sectorflabs.ratatoskr.out`)
+
+Messages sent *from* Kafka *to* Telegram are placed on this topic.
+*   **Kafka Key:** Not specified (can be anything, typically ignored by Ratatoskr).
+*   **Payload:** A JSON object defining the message to be sent.
 
 ```json
 {
   "chat_id": 123456789,
-  "text": "Hello from Ratatoskr!"
+  "text": "Hello from Ratatoskr! This message can also have buttons.",
+  "buttons": [
+      [
+          {"text": "Button 1 Label", "callback_data": "action_1"},
+          {"text": "Button 2 Label", "callback_data": "action_2"}
+      ],
+      [
+          {"text": "Another Row Button", "callback_data": "action_3"}
+      ]
+  ]
+}
+```
+The `buttons` field is optional. If included, it must be a `Vec<Vec<ButtonInfo>>` (a list of lists of button information objects). Each `ButtonInfo` object has the following structure:
+*   `text`: The text label displayed on the button.
+*   `callback_data`: The string data that will be sent back to the bot when this button is clicked.
+
+If `buttons` is not provided or is `null`, a plain text message will be sent.
+Example without buttons:
+```json
+{
+  "chat_id": 123456789,
+  "text": "Hello from Ratatoskr! This is a plain message."
 }
 ```
 
