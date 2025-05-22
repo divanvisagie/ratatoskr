@@ -28,7 +28,7 @@ stop:
 	pkill -f "redpanda start" || true 
 
 consume:
-	rpk topic consume com.sectorflabs.ratatoskr.in -n 1 | jq
+	rpk topic consume com.sectorflabs.ratatoskr.in --offset end -n 1 | jq
 
 produce:
 	echo '{"chat_id":$(CHAT_ID),"text":"hi from make"}' | rpk topic produce com.sectorflabs.ratatoskr.out

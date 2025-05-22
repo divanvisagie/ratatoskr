@@ -1,9 +1,6 @@
-// Deno 2+ Telegram <-> Kafka bridge
-// Requires: npm:grammy, npm:kafkajs
-// Ensure you have a .env file or set TELEGRAM_BOT_TOKEN in your environment
-
 import { Bot } from "npm:grammy";
 import { Kafka, logLevel } from "npm:kafkajs";
+import { resultFromFn } from "./src/types/result.ts";
 
 // Load environment variables (Deno 2+)
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
@@ -14,12 +11,13 @@ const KAFKA_IN = Deno.env.get("KAFKA_IN_TOPIC") ??
   "com.sectorflabs.ratatoskr.in";
 const KAFKA_OUT = Deno.env.get("KAFKA_OUT_TOPIC") ??
   "com.sectorflabs.ratatoskr.out";
+const CLIENT_ID = Deno.env.get("CLIENT_ID") ?? "ratatoskr-client";
 
 const bot = new Bot(TELEGRAM_BOT_TOKEN);
 
 // Kafka setup
 const kafka = new Kafka({
-  clientId: "deno-bot",
+  clientId: CLIENT_ID,
   brokers: [KAFKA_BROKER],
   logLevel: logLevel.ERROR,
 });
@@ -32,29 +30,32 @@ async function kafkaToTelegram() {
   await consumer.subscribe({ topic: KAFKA_OUT, fromBeginning: false });
   await consumer.run({
     eachMessage: async ({ message }) => {
-      if (!message.value) return;
-      try {
+      const result = resultFromFn(async () => {
+        if (!message.value) return;
         const out = JSON.parse(message.value.toString());
         if (typeof out.chat_id === "number" && typeof out.text === "string") {
           await bot.api.sendMessage(out.chat_id, out.text);
         }
-      } catch (_) {}
+      });
+      if (!result.ok) {
+        console.error("Error processing Kafka message:", result.error);
+        return;
+      }
     },
   });
 }
 
-// Telegram → Kafka
-bot.on("message:text", async (ctx) => {
+bot.on("message", async (ctx) => {
   const msg = ctx.message;
   const json = JSON.stringify(msg);
-  const key = String(msg.chat.id);
+  const key = "message";
   try {
     await producer.send({
       topic: KAFKA_IN,
       messages: [{ key, value: json }],
     });
+    console.log("Kafka message sent:", { key, value: json });
     if (Deno.env.get("DEBUG")) {
-      console.log("Kafka message sent:", { key, value: json });
       await ctx.reply("✅ Message forwarded to Kafka.");
     }
   } catch (e) {
