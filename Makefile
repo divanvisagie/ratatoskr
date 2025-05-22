@@ -1,6 +1,6 @@
 # Makefile for Deno Telegram <-> Kafka (Redpanda) Bot
 
-.PHONY: install setup run dev stop
+.PHONY: install setup run dev stop consume produce test_flow test_buttons test_callback show_topics
 
 # Redpanda config
 KAFKA_BROKER=localhost:9092
@@ -28,10 +28,22 @@ stop:
 	pkill -f "redpanda start" || true 
 
 consume:
-	rpk topic consume com.sectorflabs.ratatoskr.in --offset end -n 1 | jq
+	./scripts/consume.sh $(N)
 
 produce:
-	echo '{"chat_id":$(CHAT_ID),"text":"hi from make"}' | rpk topic produce com.sectorflabs.ratatoskr.out
+	./scripts/produce.sh "$(TEXT)"
+
+test_buttons:
+	./scripts/produce_with_buttons.sh "$(TEXT)"
+
+test_callback:
+	./scripts/simulate_callback.sh $(MESSAGE_ID) "$(CALLBACK_DATA)"
+
+test_flow:
+	./scripts/test_full_flow.sh
+
+show_topics:
+	./scripts/show_topics.sh $(N)
 
 pushpi:
 	rsync -av --delete \
