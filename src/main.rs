@@ -72,7 +72,7 @@ async fn callback_query_handler(
     let user_id = query.from.id.0;
     let query_id = query.id.clone();
     let data = query.data.as_deref().unwrap_or_default();
-    let message_id = query.message.as_ref().map(|m| m.id.0);
+    let message_id = query.message.as_ref().map(|m| m.id().0); // Changed: m.id.0 -> m.id().0
 
     tracing::debug!(callback_query_id = %query_id, %user_id, message_id = ?message_id, callback_data = %data, "Received callback query");
 
@@ -117,9 +117,9 @@ pub fn create_markup(buttons_opt: &Option<Vec<Vec<ButtonInfo>>>) -> Option<Inlin
 
 // Public function to prepare IncomingCallbackMessage from CallbackQuery
 pub fn prepare_incoming_callback_message(query: &CallbackQuery) -> IncomingCallbackMessage {
-    let chat_id = query.message.as_ref().map_or(0, |m| m.chat.id.0);
+    let chat_id = query.message.as_ref().map_or(0, |m| m.chat().id.0); // Changed: m.chat.id.0 -> m.chat().id.0
     let user_id = query.from.id.0;
-    let message_id = query.message.as_ref().map_or(0, |m| m.id.0);
+    let message_id = query.message.as_ref().map_or(0, |m| m.id().0); // Changed: m.id.0 -> m.id().0
     let callback_data = query.data.clone().unwrap_or_default();
     let callback_query_id = query.id.clone();
 
