@@ -32,3 +32,9 @@ consume:
 
 produce:
 	echo '{"chat_id":$(CHAT_ID),"text":"hi from make"}' | rpk topic produce com.sectorflabs.ratatoskr.out
+
+pushpi:
+	rsync -av --delete \
+		Cargo.toml Cargo.lock \
+		src scripts \
+		divanvisagie@heimdallr:~/src/ratatoskr

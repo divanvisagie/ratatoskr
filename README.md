@@ -1,60 +1,124 @@
 # Ratatoskr
 
-A lightweight Telegram <-> Kafka bridge written in **Deno 2+**, designed to decouple message ingestion from processing logic.
+A lightweight Telegram <-> Kafka bridge written in **Rust**, designed to decouple message ingestion from processing logic.
 
 ![Logo](docs/logo-256.png)
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue.svg)](https://github.com/yourusername/ratatoskr)
+
 ## 🚀 Features
 
-* Uses [`grammY`](https://grammy.dev/) for Telegram bot integration
-* Uses [`kafkajs`](https://kafka.js.org/) for Kafka connectivity
-* Forwards full Telegram update objects to Kafka
+* Uses [`teloxide`](https://github.com/teloxide/teloxide) for Telegram bot integration
+* Uses [`rdkafka`](https://github.com/fede1024/rust-rdkafka) for Kafka connectivity
+* Forwards full Telegram message objects to Kafka
 * Listens for outbound messages on a Kafka topic and sends them back to Telegram
 * Minimal, event-driven, and easy to extend
 
 ## 📦 Prerequisites
 
-* [Deno 2+](https://deno.com/manual@v1.35.0/introduction)
+* [Rust](https://www.rust-lang.org/tools/install)
 * A Kafka broker (default: `localhost:9092`)
 * A Telegram bot token from [@BotFather](https://t.me/BotFather)
 
 ## ⚙️ Setup
 
-1. **Install dependencies:**
+1. **Clone the repository:**
 
    ```sh
-   deno add npm:grammy npm:kafkajs
+   git clone https://github.com/yourusername/ratatoskr.git
+   cd ratatoskr
    ```
+
+   Alternatively, you can download the source code directly from the [GitHub repository](https://github.com/yourusername/ratatoskr/releases).
 
 2. **Set environment variables:**
 
    * `TELEGRAM_BOT_TOKEN` (**required**)
    * `KAFKA_BROKER` (optional, default: `localhost:9092`)
-   * `KAFKA_TOPIC_IN` (optional, default: `com.sectorflabs.ratatoskr.in`)
-   * `KAFKA_TOPIC_OUT` (optional, default: `com.sectorflabs.ratatoskr.out`)
+   * `KAFKA_IN_TOPIC` (optional, default: `com.sectorflabs.ratatoskr.in`)
+   * `KAFKA_OUT_TOPIC` (optional, default: `com.sectorflabs.ratatoskr.out`)
 
-   You can place these in a `.env` file or export them in your shell.
+   You can place these in a `.env` file or export them in your shell. A `.env.example` file is provided as a template.
 
-3. **Run the bot:**
+3. **Build and run the bot:**
 
    ```sh
-   deno run -A main.ts
+   cargo build --release
+   ./target/release/ratatoskr
+   ```
+
+   Or simply:
+   
+   ```sh
+   cargo run --release
    ```
 
 ## 🔄 Development
 
-To auto-reload on file changes:
+For development with auto-reload:
 
 ```sh
-deno run --watch -A main.ts
+cargo install cargo-watch
+cargo watch -x run
 ```
 
-## 🧱 Project Structure
+To run tests:
 
-| File        | Purpose                                |
-| ----------- | -------------------------------------- |
-| `main.ts`   | Entry point, sets up the bot and Kafka |
-| `deno.json` | Deno config (imports, permissions)     |
+```sh
+cargo test
+```
+
+## 🐳 Containerization
+
+### Using Docker
+
+To containerize the application for deployment:
+
+1. **Using the provided Dockerfile:**
+
+   The project includes a Dockerfile that sets up a multi-stage build for a lightweight container:
+
+   ```dockerfile
+   FROM rust:1.75-slim as builder
+   WORKDIR /app
+   COPY . .
+   RUN cargo build --release
+
+   FROM debian:bullseye-slim
+   RUN apt-get update && apt-get install -y libssl-dev ca-certificates && rm -rf /var/lib/apt/lists/*
+   WORKDIR /app
+   COPY --from=builder /app/target/release/ratatoskr /app/ratatoskr
+   COPY --from=builder /app/.env* /app/
+   ENV RUST_LOG=info
+   CMD ["./ratatoskr"]
+   ```
+
+2. **Build and run the Docker image:**
+
+   ```sh
+   docker build -t ratatoskr:latest .
+   docker run -d --name ratatoskr \
+     -e TELEGRAM_BOT_TOKEN=your_token_here \
+     -e KAFKA_BROKER=kafka:9092 \
+     ratatoskr:latest
+   ```
+
+### Using Docker Compose
+
+For a complete development environment with Kafka, Zookeeper, and Kafdrop (a Kafka UI):
+
+1. **Run with docker-compose:**
+
+   ```sh
+   # Make sure TELEGRAM_BOT_TOKEN is set in your environment or .env file
+   docker-compose up -d
+   ```
+
+2. **Access services:**
+   - Ratatoskr: Running in container
+   - Kafka: localhost:9092
+   - Kafdrop (Kafka UI): http://localhost:9000
+
 
 ---
 
@@ -64,8 +128,12 @@ deno run --watch -A main.ts
 
 ```json
 {
-  "update": { ... },  // Full Telegram update object
-  "received_at": "2025-05-19T12:34:56.789Z"
+  "message_id": 123,
+  "from": { "id": 456, "first_name": "User" },
+  "chat": { "id": 789, "type": "private" },
+  "date": 1678901234,
+  "text": "Hello bot!"
+  // Full Telegram Message object serialized as JSON
 }
 ```
 
@@ -74,10 +142,24 @@ deno run --watch -A main.ts
 ```json
 {
   "chat_id": 123456789,
-  "text": "Hello from Denny!"
+  "text": "Hello from Ratatoskr!"
 }
 ```
 
 ## 🧠 Why Ratatoskr?
 
-Inspired by the mythical squirrel that relays messages across realms, Ratatoskr is built to relay messages between users and intelligent systems, using Kafka as the spine.
+Inspired by the mythical squirrel that relays messages across realms, Ratatoskr is built to relay messages between users and intelligent systems, using Kafka as the messaging backbone.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📃 License
+
+This project is licensed under the GNU General Public License v2.0 (GPL-2.0) - see the LICENSE.md file for details.
