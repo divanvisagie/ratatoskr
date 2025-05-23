@@ -1,24 +1,20 @@
 use dotenv::dotenv;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{Consumer, StreamConsumer};
-use rdkafka::producer::FutureProducer; // FutureRecord removed
+use rdkafka::producer::FutureProducer;
 use std::env;
-// Error removed
 use std::sync::Arc;
 use teloxide::dispatching::UpdateFilterExt;
-use teloxide::types::Update; // CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup removed
+use teloxide::types::Update;
 use teloxide::{dptree, prelude::*};
 use tracing_subscriber::{EnvFilter, fmt};
-// StreamExt, KafkaMessageRd removed
 
 mod structs;
-use structs::*;
 
 mod telegram_handlers;
 use telegram_handlers::*;
 
 mod utils;
-use utils::*;
 
 mod kafka_processing;
 use kafka_processing::*;
@@ -27,14 +23,11 @@ use kafka_processing::*;
 async fn main() {
     dotenv().ok();
 
-    // Initialize tracing subscriber
-    // RUST_LOG environment variable can be used to control log levels (e.g., RUST_LOG=info,ratatoskr=debug)
     let subscriber = fmt::Subscriber::builder()
         .with_env_filter(EnvFilter::from_default_env())
-        .with_writer(std::io::stderr) // Or std::io::stdout
+        .with_writer(std::io::stderr)
         .finish();
     if let Err(e) = tracing::subscriber::set_global_default(subscriber) {
-        // Fallback to basic logging if tracing setup fails, though it's unlikely.
         eprintln!("Failed to set global default tracing subscriber: {}", e);
     }
 
@@ -64,7 +57,6 @@ async fn main() {
 
     let bot = Bot::new(telegram_token.clone());
 
-    // Kafka producer
     let producer: Arc<FutureProducer> = Arc::new(
         ClientConfig::new()
             .set("bootstrap.servers", &kafka_broker)
@@ -76,7 +68,6 @@ async fn main() {
     );
     tracing::info!("Kafka producer created successfully.");
 
-    // Kafka consumer
     let consumer: StreamConsumer = ClientConfig::new()
         .set("group.id", "ratatoskr-bot-consumer")
         .set("bootstrap.servers", &kafka_broker)
@@ -99,12 +90,14 @@ async fn main() {
     });
     tracing::info!(topic = %kafka_out_topic, "Subscribed to Kafka topic successfully.");
 
-    // Kafka -> Telegram task
     let bot_consumer_clone = bot.clone();
     let kafka_out_topic_clone = kafka_out_topic.clone();
-    tokio::spawn(start_kafka_consumer_loop(bot_consumer_clone, consumer, kafka_out_topic_clone));
+    tokio::spawn(start_kafka_consumer_loop(
+        bot_consumer_clone,
+        consumer,
+        kafka_out_topic_clone,
+    ));
 
-    // Telegram -> Kafka dispatcher
     let handler = dptree::entry()
         .branch(Update::filter_message().endpoint(message_handler))
         .branch(Update::filter_callback_query().endpoint(callback_query_handler));
@@ -116,3 +109,4 @@ async fn main() {
         .dispatch()
         .await;
 }
+

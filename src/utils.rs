@@ -14,7 +14,6 @@ pub fn create_markup(buttons_opt: &Option<Vec<Vec<ButtonInfo>>>) -> Option<Inlin
     })
 }
 
-// Public function to prepare IncomingCallbackMessage from CallbackQuery
 pub fn prepare_incoming_callback_message(query: &CallbackQuery) -> IncomingCallbackMessage {
     let chat_id = query.message.as_ref().map_or(0, |m| m.chat().id.0);
     let user_id = query.from.id.0;
