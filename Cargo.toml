@@ -15,3 +15,7 @@ futures-util = "0.3"
 
 # Vendor Openssl becuase linux 
 openssl = { version = "0.10", features = ["vendored"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
