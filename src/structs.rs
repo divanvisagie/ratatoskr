@@ -2,22 +2,22 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ButtonInfo {
-    text: String,
-    callback_data: String,
+    pub text: String,
+    pub callback_data: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OutgoingKafkaMessage {
-    chat_id: i64,
-    text: String,
-    buttons: Option<Vec<Vec<ButtonInfo>>>,
+    pub chat_id: i64,
+    pub text: String,
+    pub buttons: Option<Vec<Vec<ButtonInfo>>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IncomingCallbackMessage {
-    chat_id: i64,
-    user_id: u64,
-    message_id: i32,
-    callback_data: String,
-    callback_query_id: String,
+    pub chat_id: i64,
+    pub user_id: u64,
+    pub message_id: i32,
+    pub callback_data: String,
+    pub callback_query_id: String,
 }

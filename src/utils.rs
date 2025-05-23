@@ -1,7 +1,6 @@
 use crate::structs::{ButtonInfo, IncomingCallbackMessage};
 use teloxide::types::{CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup};
 
-// Public function to create InlineKeyboardMarkup from ButtonInfo
 pub fn create_markup(buttons_opt: &Option<Vec<Vec<ButtonInfo>>>) -> Option<InlineKeyboardMarkup> {
     buttons_opt.as_ref().map(|buttons| {
         InlineKeyboardMarkup::new(buttons.iter().map(|row| {

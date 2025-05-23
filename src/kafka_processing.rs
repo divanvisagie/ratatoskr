@@ -4,10 +4,13 @@ use futures_util::StreamExt;
 use rdkafka::consumer::StreamConsumer; // Consumer might not be needed directly if StreamConsumer is passed
 use rdkafka::message::Message as KafkaMessageRd; // Alias if Message is ambiguous
 use serde_json;
-use teloxide::prelude::{Bot, ChatId, Requester};
+use std::sync::Arc;
+use teloxide::{
+    payloads::SendMessageSetters,
+    prelude::{Bot, ChatId, Requester},
+};
 use tokio; // tokio is not directly used in the function body but good to have if the function itself is spawned.
-use tracing;
-use std::sync::Arc; // Arc is not used in the function signature or body, but might be used by the caller.
+use tracing; // Arc is not used in the function signature or body, but might be used by the caller.
 
 pub async fn start_kafka_consumer_loop(
     bot_consumer_clone: Bot,
