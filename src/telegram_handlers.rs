@@ -68,4 +68,3 @@ pub async fn callback_query_handler(
 
     Ok(())
 }
-
