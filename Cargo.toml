@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 teloxide = { version = "0.15", features = ["macros"] }
-tokio = { version = "1.37", features = ["full"] }
+tokio = { version = "1.45", features = ["full"] }
 rdkafka = { version = "0.37", features = ["tokio"] }
 dotenv = "0.15"
 serde = { version = "1.0", features = ["derive"] }
