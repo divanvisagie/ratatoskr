@@ -7,6 +7,9 @@ KAFKA_BROKER=localhost:9092
 KAFKA_IN_TOPIC?=com.sectorflabs.ratatoskr.in
 KAFKA_OUT_TOPIC?=com.sectorflabs.ratatoskr.out
 
+main:
+	cargo build
+
 # Install Redpanda natively (macOS/Linux with Homebrew)
 install:
 	brew install redpanda-data/tap/redpanda
@@ -19,10 +22,9 @@ setup:
 	echo "Redpanda and topics are ready."
 
 run:
-	deno run -A main.ts
-
+	cargo run
 dev:
-	deno run --watch -A main.ts
+	cargo watch -x run
 
 stop:
 	pkill -f "redpanda start" || true 
